@@ -1,0 +1,130 @@
+import { pgTable, serial, text, timestamp, pgEnum, integer, AnyPgColumn, uniqueIndex } from "drizzle-orm/pg-core";
+
+export const commonStatusEnum = pgEnum("status_common", ["Active", "Deleted"]);
+
+export const departments = pgTable("departments", {
+  id: serial("id").primaryKey(),
+  department: text("department").notNull().unique(),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  role: text("role").notNull().unique(),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  firstname: text("firstname").notNull(),
+  lastname: text("lastname").notNull(),
+  departmentId: integer("department_id").references(() => departments.id),
+  roleId: integer("role_id").references(() => roles.id),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+  deletedAt: timestamp("deleted_at"),
+  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
+  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
+  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+});
+
+export const pages = pgTable("pages", {
+  id: serial("id").primaryKey(),
+  page: text("page").notNull(),
+  path: text("path").notNull(),
+  icon: text("icon"),
+  parentId: integer("parent_id").references((): AnyPgColumn => pages.id),
+  order: integer("order"),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  permission: text("permission").notNull().unique(),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").notNull().references(() => roles.id),
+  pageId: integer("page_id").notNull().references(() => pages.id),
+  permissionId: integer("permission_id").notNull().references(() => permissions.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("role_page_permission_idx").on(t.roleId, t.pageId, t.permissionId),
+]);
+
+export const timezones = pgTable("timezones", {
+  id: serial("id").primaryKey(),
+  timezone: text("timezone").notNull().unique(),
+  utcOffset: text("utc_offset"),
+  abbreviation: text("abbreviation"),
+});
+
+export const settingsApp = pgTable("settings_app", {
+  id: serial("id").primaryKey(),
+  appLogo: text("app_logo"),
+  appFavicon: text("app_favicon"),
+  appName: text("app_name").notNull().default("RBAC System"),
+  appTagline: text("app_tagline"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  tinNo: text("tin_no"),
+  timezoneId: integer("timezone_id").references(() => timezones.id),
+  otpDuration: integer("otp_duration"),
+  primaryStorage: text("primary_storage").notNull().default("filesystem"),
+  downloadLinkAndroid: text("download_link_android"),
+  downloadLinkIos: text("download_link_ios"),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const settingsMail = pgTable("settings_mail", {
+  id: serial("id").primaryKey(),
+  smtpHost: text("smtp_host"),
+  smtpPort: integer("smtp_port"),
+  smtpUsername: text("smtp_username"),
+  smtpPassword: text("smtp_password"),
+  smtpFromEmail: text("smtp_from_email"),
+  smtpSenderName: text("smtp_sender_name"),
+  smtpCrypto: text("smtp_crypto"),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const settingsSms = pgTable("settings_sms", {
+  id: serial("id").primaryKey(),
+  textbeeApiKey: text("textbee_api_key"),
+  textbeeDeviceId: text("textbee_device_id"),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const settingsCloudinary = pgTable("settings_cloudinary", {
+  id: serial("id").primaryKey(),
+  cloudinaryName: text("cloudinary_name"),
+  cloudinaryApiKey: text("cloudinary_api_key"),
+  cloudinaryApiSecret: text("cloudinary_api_secret"),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
