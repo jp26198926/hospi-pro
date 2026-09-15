@@ -2,12 +2,17 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { rolePermissions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { requirePermission } from "@/lib/api-auth";
+import { invalidatePermissionCache } from "@/lib/permissions";
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "/roles", "Edit");
+    if (auth instanceof Response) return auth;
+
     const { id } = await params;
     const rpId = parseInt(id);
 
@@ -26,6 +31,8 @@ export async function DELETE(
 
     // Hard delete
     await db.delete(rolePermissions).where(eq(rolePermissions.id, rpId));
+
+    invalidatePermissionCache(existing.roleId);
 
     return Response.json({ message: "Role permission deleted successfully" });
   } catch (error) {

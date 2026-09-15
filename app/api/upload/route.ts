@@ -5,11 +5,15 @@ import crypto from "crypto";
 import { db } from "@/lib/db";
 import { settingsApp, settingsCloudinary } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAuth } from "@/lib/api-auth";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof Response) return auth;
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const folder = formData.get("folder") as string || "settings-application";

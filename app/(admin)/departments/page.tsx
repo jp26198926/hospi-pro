@@ -1,5 +1,6 @@
 import { DepartmentsTable } from "@/components/departments/departments-table";
 import { getAppTimezone } from "@/lib/settings";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "Departments",
@@ -7,6 +8,7 @@ export const metadata = {
 };
 
 export default async function DepartmentsPage() {
+  await requirePageRead("/departments");
   const timezone = await getAppTimezone();
   return (
     <div className="space-y-4">

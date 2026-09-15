@@ -1,5 +1,6 @@
 import { PermissionsTable } from "@/components/permissions/permissions-table";
 import { getAppTimezone } from "@/lib/settings";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "Permissions",
@@ -7,6 +8,7 @@ export const metadata = {
 };
 
 export default async function PermissionsPage() {
+  await requirePageRead("/permissions");
   const timezone = await getAppTimezone();
   return (
     <div className="space-y-4">

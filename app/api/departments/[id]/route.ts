@@ -3,12 +3,16 @@ import { db } from "@/lib/db";
 import { departments } from "@/lib/db/schema";
 import { departmentSchema } from "@/lib/validations/department";
 import { eq, ne, and } from "drizzle-orm";
+import { requirePermission } from "@/lib/api-auth";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "/departments", "Read");
+    if (auth instanceof Response) return auth;
+
     const { id } = await params;
     const departmentId = parseInt(id);
 
@@ -37,6 +41,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "/departments", "Edit");
+    if (auth instanceof Response) return auth;
+
     const { id } = await params;
     const departmentId = parseInt(id);
 
@@ -89,10 +96,13 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "/departments", "Delete");
+    if (auth instanceof Response) return auth;
+
     const { id } = await params;
     const departmentId = parseInt(id);
 
@@ -122,10 +132,13 @@ export async function DELETE(
 }
 
 export async function PATCH(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "/departments", "Restore");
+    if (auth instanceof Response) return auth;
+
     const { id } = await params;
     const departmentId = parseInt(id);
 

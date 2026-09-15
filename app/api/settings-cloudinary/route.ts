@@ -3,9 +3,13 @@ import { db } from "@/lib/db";
 import { settingsCloudinary } from "@/lib/db/schema";
 import { settingsCloudinarySchema } from "@/lib/validations/settings-cloudinary";
 import { eq } from "drizzle-orm";
+import { requirePermission } from "@/lib/api-auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/settings-cloudinary", "Read");
+    if (auth instanceof Response) return auth;
+
     const [settings] = await db.select().from(settingsCloudinary).where(eq(settingsCloudinary.id, 1));
 
     if (!settings) {
@@ -25,6 +29,9 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/settings-cloudinary", "Edit");
+    if (auth instanceof Response) return auth;
+
     const body = await request.json();
     const parsed = settingsCloudinarySchema.safeParse(body);
 

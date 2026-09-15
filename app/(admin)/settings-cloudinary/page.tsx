@@ -1,11 +1,13 @@
 import { SettingsCloudinaryForm } from "@/components/settings-cloudinary/settings-form";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "Cloudinary Settings",
   description: "Configure Cloudinary storage settings",
 };
 
-export default function SettingsCloudinaryPage() {
+export default async function SettingsCloudinaryPage() {
+  await requirePageRead("/settings-cloudinary");
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

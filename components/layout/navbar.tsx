@@ -6,6 +6,7 @@ import { Bell, Mail, User, Search, Menu, LogOut, Key, UserCircle } from "lucide-
 import { Button } from "@/components/ui/button";
 import { ChangePasswordModal } from "@/components/auth/change-password-modal";
 import { ProfileModal } from "@/components/auth/profile-modal";
+import { apiFetch } from "@/lib/api-client";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -16,7 +17,19 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [userName, setUserName] = useState("...");
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    apiFetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.data) {
+          setUserName(`${json.data.firstname} ${json.data.lastname}`);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -36,6 +49,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
       // Ignore errors - proceed with local cleanup
     }
     localStorage.removeItem("accessToken");
+    document.cookie = "accessToken=; Path=/; Max-Age=0";
     router.push("/login");
   };
 
@@ -122,7 +136,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             </div>
             <div className="hidden text-xs leading-tight lg:block">
               <div className="font-medium">Welcome,</div>
-              <div className="font-semibold">Admin</div>
+              <div className="font-semibold">{userName}</div>
             </div>
           </button>
 

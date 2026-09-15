@@ -1,11 +1,13 @@
 import { SettingsSmsForm } from "@/components/settings-sms/settings-form";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "SMS Settings",
   description: "Configure SMS gateway settings",
 };
 
-export default function SettingsSmsPage() {
+export default async function SettingsSmsPage() {
+  await requirePageRead("/settings-sms");
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

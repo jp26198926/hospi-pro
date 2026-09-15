@@ -3,9 +3,13 @@ import { db } from "@/lib/db";
 import { settingsMail } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import nodemailer from "nodemailer";
+import { requirePermission } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/settings-mail", "Edit");
+    if (auth instanceof Response) return auth;
+
     const body = await request.json();
     const { recipientEmail } = body;
 

@@ -1,11 +1,13 @@
 import { PagesTable } from "@/components/pages/pages-table";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "Pages",
   description: "Manage system pages",
 };
 
-export default function PagesIndexPage() {
+export default async function PagesIndexPage() {
+  await requirePageRead("/pages");
   return (
     <div className="space-y-4">
       {/* Page Header */}

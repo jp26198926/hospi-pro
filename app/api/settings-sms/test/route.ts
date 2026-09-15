@@ -2,9 +2,13 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { settingsSms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { requirePermission } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/settings-sms", "Edit");
+    if (auth instanceof Response) return auth;
+
     const body = await request.json();
     const { phoneNumber } = body;
 

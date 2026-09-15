@@ -37,6 +37,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api-client";
 
 const iconMap: Record<string, LucideIcon> = {
   home: Home,
@@ -127,7 +128,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
 
   const fetchPages = useCallback(async () => {
     try {
-      const res = await fetch("/api/pages?status=Active&limit=100");
+      const res = await apiFetch("/api/pages?mine=1");
       const json = await res.json();
       if (json.data) {
         setNavItems(buildNavTree(json.data));
@@ -169,6 +170,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
       // Ignore errors
     }
     localStorage.removeItem("accessToken");
+    document.cookie = "accessToken=; Path=/; Max-Age=0";
     router.push("/login");
   };
 

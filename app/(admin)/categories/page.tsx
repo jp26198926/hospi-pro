@@ -1,5 +1,6 @@
 import { CategoriesTable } from "@/components/categories/categories-table";
 import { getAppTimezone } from "@/lib/settings";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "Categories",
@@ -7,6 +8,7 @@ export const metadata = {
 };
 
 export default async function CategoriesPage() {
+  await requirePageRead("/categories");
   const timezone = await getAppTimezone();
   return (
     <div className="space-y-4">

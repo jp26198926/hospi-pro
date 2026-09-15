@@ -1,5 +1,6 @@
 import { RolesTable } from "@/components/roles/roles-table";
 import { getAppTimezone } from "@/lib/settings";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "Roles",
@@ -7,6 +8,7 @@ export const metadata = {
 };
 
 export default async function RolesPage() {
+  await requirePageRead("/roles");
   const timezone = await getAppTimezone();
   return (
     <div className="space-y-4">

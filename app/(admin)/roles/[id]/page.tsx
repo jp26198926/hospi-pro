@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { RolePermissionsTable } from "@/components/role-permissions/role-permissions-table";
+import { requirePageRead } from "@/lib/api-auth";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -24,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function RoleDetailPage({ params }: Props) {
+  await requirePageRead("/roles");
   const { id } = await params;
   const roleId = parseInt(id);
 

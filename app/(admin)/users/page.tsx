@@ -1,11 +1,13 @@
 import { UsersTable } from "@/components/users/users-table";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "Users",
   description: "Manage system users",
 };
 
-export default function UsersPage() {
+export default async function UsersPage() {
+  await requirePageRead("/users");
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

@@ -2,13 +2,44 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { pages } from "@/lib/db/schema";
 import { pageSchema } from "@/lib/validations/page";
-import { eq, desc, asc, ilike, and, ne, count as drizzleCount, sql, aliasedTable } from "drizzle-orm";
+import { eq, desc, asc, ilike, and, ne, count as drizzleCount, sql, aliasedTable, inArray } from "drizzle-orm";
+import { requireAuth, requirePermission } from "@/lib/api-auth";
+import { getAllowedPageIds } from "@/lib/permissions";
 
 const parentPages = aliasedTable(pages, "parent_pages");
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+
+    // Sidebar mode: return only pages the caller's role can View
+    if (searchParams.get("mine") === "1") {
+      const auth = await requireAuth(request);
+      if (auth instanceof Response) return auth;
+      if (!auth.roleId) return Response.json({ data: [], total: 0, page: 1, limit: 0 });
+
+      const allowedIds = await getAllowedPageIds(auth.roleId);
+      if (allowedIds.length === 0) return Response.json({ data: [], total: 0, page: 1, limit: 0 });
+
+      const data = await db
+        .select({
+          id: pages.id,
+          page: pages.page,
+          path: pages.path,
+          icon: pages.icon,
+          parentId: pages.parentId,
+          order: pages.order,
+          status: pages.status,
+        })
+        .from(pages)
+        .where(and(eq(pages.status, "Active"), inArray(pages.id, allowedIds)))
+        .orderBy(asc(pages.order));
+
+      return Response.json({ data, total: data.length, page: 1, limit: data.length });
+    }
+
+    const auth = await requirePermission(request, "/pages", "Read");
+    if (auth instanceof Response) return auth;
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "10")));
     const search = searchParams.get("search") || "";
@@ -87,6 +118,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/pages", "Add");
+    if (auth instanceof Response) return auth;
     const body = await request.json();
     const parsed = pageSchema.safeParse(body);
 

@@ -2,9 +2,14 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { roles, rolePermissions } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
+import { requirePermission } from "@/lib/api-auth";
+import { invalidatePermissionCache } from "@/lib/permissions";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/roles", "Clone");
+    if (auth instanceof Response) return auth;
+
     const body = await request.json();
     const { sourceRoleId, newRoleName } = body;
 
@@ -54,6 +59,8 @@ export async function POST(request: NextRequest) {
 
       await db.insert(rolePermissions).values(newPermissions);
     }
+
+    invalidatePermissionCache(newRole.id);
 
     return Response.json({
       data: newRole,

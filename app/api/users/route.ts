@@ -4,9 +4,12 @@ import { users, departments, roles } from "@/lib/db/schema";
 import { userCreateSchema } from "@/lib/validations/user";
 import { eq, desc, asc, ilike, and, ne, count as drizzleCount } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { requirePermission } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/users", "Read");
+    if (auth instanceof Response) return auth;
     const searchParams = request.nextUrl.searchParams;
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "10")));
@@ -86,6 +89,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/users", "Add");
+    if (auth instanceof Response) return auth;
     const body = await request.json();
     const parsed = userCreateSchema.safeParse(body);
 

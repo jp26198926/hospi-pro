@@ -3,9 +3,14 @@ import { db } from "@/lib/db";
 import { rolePermissions, pages, permissions } from "@/lib/db/schema";
 import { rolePermissionSchema } from "@/lib/validations/role-permission";
 import { eq, desc, asc, and, ilike, count as drizzleCount } from "drizzle-orm";
+import { requirePermission } from "@/lib/api-auth";
+import { invalidatePermissionCache } from "@/lib/permissions";
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/roles", "Read");
+    if (auth instanceof Response) return auth;
+
     const searchParams = request.nextUrl.searchParams;
     const roleId = searchParams.get("roleId");
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
@@ -74,6 +79,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/roles", "Edit");
+    if (auth instanceof Response) return auth;
+
     const body = await request.json();
     const parsed = rolePermissionSchema.safeParse(body);
 
@@ -98,6 +106,8 @@ export async function POST(request: NextRequest) {
     }
 
     const [data] = await db.insert(rolePermissions).values(parsed.data).returning();
+
+    invalidatePermissionCache(parsed.data.roleId);
 
     return Response.json({ data }, { status: 201 });
   } catch (error) {

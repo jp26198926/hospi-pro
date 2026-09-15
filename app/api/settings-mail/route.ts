@@ -3,9 +3,13 @@ import { db } from "@/lib/db";
 import { settingsMail } from "@/lib/db/schema";
 import { settingsMailSchema } from "@/lib/validations/settings-mail";
 import { eq } from "drizzle-orm";
+import { requirePermission } from "@/lib/api-auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/settings-mail", "Read");
+    if (auth instanceof Response) return auth;
+
     const [settings] = await db.select().from(settingsMail).where(eq(settingsMail.id, 1));
 
     if (!settings) {
@@ -25,6 +29,9 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/settings-mail", "Edit");
+    if (auth instanceof Response) return auth;
+
     const body = await request.json();
     const parsed = settingsMailSchema.safeParse(body);
 

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { requirePageRead } from "@/lib/api-auth";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -23,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function DepartmentDetailPage({ params }: Props) {
+  await requirePageRead("/departments");
   const { id } = await params;
   const departmentId = parseInt(id);
 

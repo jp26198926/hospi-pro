@@ -3,9 +3,13 @@ import { db } from "@/lib/db";
 import { settingsApp } from "@/lib/db/schema";
 import { settingsAppSchema } from "@/lib/validations/settings-application";
 import { eq } from "drizzle-orm";
+import { requireAuth, requirePermission } from "@/lib/api-auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAuth(request);
+    if (auth instanceof Response) return auth;
+
     const [settings] = await db.select().from(settingsApp).where(eq(settingsApp.id, 1));
 
     if (!settings) {
@@ -26,6 +30,9 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/settings-application", "Edit");
+    if (auth instanceof Response) return auth;
+
     const body = await request.json();
     const parsed = settingsAppSchema.safeParse(body);
 

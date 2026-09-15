@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Shield, Users, Settings, BarChart3 } from "lucide-react";
+import { requirePageRead } from "@/lib/api-auth";
 
-export default function Home() {
+export default async function Home() {
+  await requirePageRead("/dashboard");
   return (
     <div className="space-y-4">
       {/* Page Header */}

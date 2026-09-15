@@ -3,12 +3,16 @@ import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { categorySchema } from "@/lib/validations/category";
 import { eq, ne, and } from "drizzle-orm";
+import { requirePermission } from "@/lib/api-auth";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "/categories", "Read");
+    if (auth instanceof Response) return auth;
+
     const { id } = await params;
     const categoryId = parseInt(id);
 
@@ -37,6 +41,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "/categories", "Edit");
+    if (auth instanceof Response) return auth;
+
     const { id } = await params;
     const categoryId = parseInt(id);
 
@@ -94,10 +101,13 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "/categories", "Delete");
+    if (auth instanceof Response) return auth;
+
     const { id } = await params;
     const categoryId = parseInt(id);
 
@@ -127,10 +137,13 @@ export async function DELETE(
 }
 
 export async function PATCH(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "/categories", "Restore");
+    if (auth instanceof Response) return auth;
+
     const { id } = await params;
     const categoryId = parseInt(id);
 

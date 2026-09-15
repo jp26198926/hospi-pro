@@ -1,11 +1,13 @@
 import { SettingsForm } from "@/components/settings-application/settings-form";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "Application Settings",
   description: "Configure application settings",
 };
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await requirePageRead("/settings-application");
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

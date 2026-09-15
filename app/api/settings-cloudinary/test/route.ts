@@ -3,9 +3,13 @@ import { db } from "@/lib/db";
 import { settingsCloudinary } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import { requirePermission } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/settings-cloudinary", "Edit");
+    if (auth instanceof Response) return auth;
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
 

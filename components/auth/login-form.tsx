@@ -11,6 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Shield, Eye, EyeOff } from "lucide-react";
 import { loginSchema, LoginInput } from "@/lib/validations/auth";
 
+function setAccessTokenCookie(token: string) {
+  document.cookie = `accessToken=${token}; Path=/; Max-Age=900; SameSite=Strict`;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -55,6 +59,7 @@ export function LoginForm() {
 
       // Store access token in localStorage for API calls
       localStorage.setItem("accessToken", json.data.accessToken);
+      setAccessTokenCookie(json.data.accessToken);
 
       toast.success("Login successful");
       router.push("/");

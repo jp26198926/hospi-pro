@@ -3,9 +3,13 @@ import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { categorySchema } from "@/lib/validations/category";
 import { eq, desc, asc, ilike, and, ne, or, count as drizzleCount } from "drizzle-orm";
+import { requirePermission } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/categories", "Read");
+    if (auth instanceof Response) return auth;
+
     const searchParams = request.nextUrl.searchParams;
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "10")));
@@ -66,6 +70,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "/categories", "Add");
+    if (auth instanceof Response) return auth;
+
     const body = await request.json();
     const parsed = categorySchema.safeParse(body);
 
