@@ -10,6 +10,7 @@ export const settingsAppSchema = z.object({
   address: z.string().max(255).optional().nullable(),
   tinNo: z.string().max(50).optional().nullable(),
   timezoneId: z.number().int().positive().optional().nullable(),
+  currencyId: z.number().int().positive().optional().nullable(),
   otpDuration: z.number().int().positive().optional().nullable(),
   primaryStorage: z.enum(["filesystem", "cloudinary"]),
   downloadLinkAndroid: z.string().max(255).optional().nullable(),

@@ -76,6 +76,13 @@ export const timezones = pgTable("timezones", {
   abbreviation: text("abbreviation"),
 });
 
+export const currencies = pgTable("currencies", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  symbol: text("symbol"),
+});
+
 export const settingsApp = pgTable("settings_app", {
   id: serial("id").primaryKey(),
   appLogo: text("app_logo"),
@@ -87,6 +94,7 @@ export const settingsApp = pgTable("settings_app", {
   address: text("address"),
   tinNo: text("tin_no"),
   timezoneId: integer("timezone_id").references(() => timezones.id),
+  currencyId: integer("currency_id").references(() => currencies.id),
   otpDuration: integer("otp_duration"),
   primaryStorage: text("primary_storage").notNull().default("filesystem"),
   downloadLinkAndroid: text("download_link_android"),

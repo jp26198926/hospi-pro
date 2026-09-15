@@ -21,6 +21,13 @@ interface TimezoneOption {
   timezone: string;
 }
 
+interface CurrencyOption {
+  id: number;
+  code: string;
+  name: string;
+  symbol: string | null;
+}
+
 interface SettingsData {
   appLogo: string | null;
   appFavicon: string | null;
@@ -31,6 +38,7 @@ interface SettingsData {
   address: string | null;
   tinNo: string | null;
   timezoneId: number | null;
+  currencyId: number | null;
   otpDuration: number | null;
   primaryStorage: string | null;
   downloadLinkAndroid: string | null;
@@ -43,6 +51,7 @@ export function SettingsForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [timezones, setTimezones] = useState<TimezoneOption[]>([]);
+  const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
   const [cloudinaryConfigured, setCloudinaryConfigured] = useState(false);
@@ -66,6 +75,7 @@ export function SettingsForm() {
   });
 
   const timezoneIdValue = watch("timezoneId");
+  const currencyIdValue = watch("currencyId");
   const primaryStorageValue = watch("primaryStorage");
 
   const storageOptions = [
@@ -77,8 +87,9 @@ export function SettingsForm() {
     Promise.all([
       fetch("/api/settings-application").then((r) => r.json()),
       fetch("/api/timezones?limit=500").then((r) => r.json()),
+      fetch("/api/currencies?limit=500").then((r) => r.json()),
       fetch("/api/settings-cloudinary").then((r) => r.json()),
-    ]).then(([settingsJson, tzJson, cloudinaryJson]) => {
+    ]).then(([settingsJson, tzJson, curJson, cloudinaryJson]) => {
       if (settingsJson.data) {
         const s: SettingsData = settingsJson.data;
         reset({
@@ -91,16 +102,19 @@ export function SettingsForm() {
           address: s.address || "",
           tinNo: s.tinNo || "",
           timezoneId: s.timezoneId,
+          currencyId: s.currencyId,
           otpDuration: s.otpDuration,
           primaryStorage: (s.primaryStorage as "filesystem" | "cloudinary") || "filesystem",
           downloadLinkAndroid: s.downloadLinkAndroid || "",
           downloadLinkIos: s.downloadLinkIos || "",
         });
         setValue("timezoneId", s.timezoneId);
+        setValue("currencyId", s.currencyId);
         setLogoPreview(s.appLogo);
         setFaviconPreview(s.appFavicon);
       }
       if (tzJson.data) setTimezones(tzJson.data);
+      if (curJson.data) setCurrencies(curJson.data);
       if (cloudinaryJson.data) {
         const c = cloudinaryJson.data;
         setCloudinaryConfigured(!!(c.cloudinaryName && c.cloudinaryApiKey && c.cloudinaryApiSecret));
@@ -197,6 +211,11 @@ export function SettingsForm() {
   const timezoneOptions = timezones.map((tz) => ({
     value: String(tz.id),
     label: tz.timezone,
+  }));
+
+  const currencyOptions = currencies.map((c) => ({
+    value: String(c.id),
+    label: c.symbol ? `${c.code} — ${c.name} (${c.symbol})` : `${c.code} — ${c.name}`,
   }));
 
   if (loading) {
@@ -359,6 +378,15 @@ export function SettingsForm() {
               value={timezoneIdValue ? String(timezoneIdValue) : ""}
               onValueChange={(val) => setValue("timezoneId", val ? Number(val) : null)}
               placeholder="Select timezone"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-[#333]">Default Currency</Label>
+            <SearchableSelect
+              options={currencyOptions}
+              value={currencyIdValue ? String(currencyIdValue) : ""}
+              onValueChange={(val) => setValue("currencyId", val ? Number(val) : null)}
+              placeholder="Select currency"
             />
           </div>
           <div className="space-y-2">
