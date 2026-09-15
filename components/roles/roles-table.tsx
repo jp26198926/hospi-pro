@@ -40,14 +40,14 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/datetime";
 import { getColumns, Role } from "./roles-columns";
 import { RoleFormModal } from "./role-form-modal";
 import { RoleDeleteModal } from "./role-delete-modal";
 import { RoleSearchModal } from "./role-search-modal";
 import { RoleCloneModal } from "./role-clone-modal";
 
-export function RolesTable() {
+export function RolesTable({ timezone }: { timezone: string }) {
   const router = useRouter();
   const [data, setData] = useState<Role[]>([]);
   const [total, setTotal] = useState(0);
@@ -151,6 +151,7 @@ export function RolesTable() {
     onDelete: handleDelete,
     onRestore: handleRestore,
     onClone: handleClone,
+    timezone,
   });
 
   const table = useReactTable({
@@ -177,8 +178,8 @@ export function RolesTable() {
         idx + 1,
         role.role,
         role.status,
-        format(new Date(role.createdAt), "MMM dd, yyyy HH:mm"),
-        role.updatedAt ? format(new Date(role.updatedAt), "MMM dd, yyyy HH:mm") : "-",
+        formatDateTime(role.createdAt, timezone),
+        role.updatedAt ? formatDateTime(role.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -191,8 +192,8 @@ export function RolesTable() {
       "#": idx + 1,
       Role: role.role,
       Status: role.status,
-      "Created At": format(new Date(role.createdAt), "MMM dd, yyyy HH:mm"),
-      "Updated At": role.updatedAt ? format(new Date(role.updatedAt), "MMM dd, yyyy HH:mm") : "-",
+      "Created At": formatDateTime(role.createdAt, timezone),
+      "Updated At": role.updatedAt ? formatDateTime(role.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -301,8 +302,8 @@ export function RolesTable() {
               <div className="px-4 py-3">
                 <p className="text-base font-semibold text-[#337ab7]">{role.role}</p>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <p><span className="font-medium text-[#666]">Created:</span> {format(new Date(role.createdAt), "MMM dd, yyyy HH:mm")}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {role.updatedAt ? format(new Date(role.updatedAt), "MMM dd, yyyy HH:mm") : "-"}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(role.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {role.updatedAt ? formatDateTime(role.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
 

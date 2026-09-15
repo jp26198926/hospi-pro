@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { users, departments, roles } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
-import { format } from "date-fns";
+import { getAppTimezone } from "@/lib/settings";
+import { formatDateTimeLong } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -48,6 +49,8 @@ export default async function UserDetailPage({ params }: Props) {
     .where(and(eq(users.id, userId), ne(users.status, "Deleted")));
 
   if (!user) notFound();
+
+  const tz = await getAppTimezone();
 
   return (
     <div className="space-y-4">
@@ -103,15 +106,15 @@ export default async function UserDetailPage({ params }: Props) {
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Created At</dt>
-              <dd className="mt-1 text-sm text-foreground">{format(new Date(user.createdAt), "MMMM dd, yyyy HH:mm:ss")}</dd>
+              <dd className="mt-1 text-sm text-foreground">{formatDateTimeLong(user.createdAt, tz)}</dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Updated At</dt>
-              <dd className="mt-1 text-sm text-foreground">{user.updatedAt ? format(new Date(user.updatedAt), "MMMM dd, yyyy HH:mm:ss") : "-"}</dd>
+              <dd className="mt-1 text-sm text-foreground">{user.updatedAt ? formatDateTimeLong(user.updatedAt, tz) : "-"}</dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Deleted At</dt>
-              <dd className="mt-1 text-sm text-foreground">{user.deletedAt ? format(new Date(user.deletedAt), "MMMM dd, yyyy HH:mm:ss") : "-"}</dd>
+              <dd className="mt-1 text-sm text-foreground">{user.deletedAt ? formatDateTimeLong(user.deletedAt, tz) : "-"}</dd>
             </div>
           </dl>
         </div>

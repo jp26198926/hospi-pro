@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { pages } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
-import { format } from "date-fns";
+import { getAppTimezone } from "@/lib/settings";
+import { formatDateTimeLong } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +34,8 @@ export default async function PageDetailPage({ params }: Props) {
     .where(and(eq(pages.id, pageId), ne(pages.status, "Deleted")));
 
   if (!page) notFound();
+
+  const tz = await getAppTimezone();
 
   // Fetch parent page name if parentId exists
   let parentName = "-";
@@ -112,14 +115,14 @@ export default async function PageDetailPage({ params }: Props) {
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Created At</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {format(new Date(page.createdAt), "MMMM dd, yyyy HH:mm:ss")}
+                {formatDateTimeLong(page.createdAt, tz)}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Updated At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {page.updatedAt
-                  ? format(new Date(page.updatedAt), "MMMM dd, yyyy HH:mm:ss")
+                  ? formatDateTimeLong(page.updatedAt, tz)
                   : "-"}
               </dd>
             </div>
@@ -127,7 +130,7 @@ export default async function PageDetailPage({ params }: Props) {
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Deleted At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {page.deletedAt
-                  ? format(new Date(page.deletedAt), "MMMM dd, yyyy HH:mm:ss")
+                  ? formatDateTimeLong(page.deletedAt, tz)
                   : "-"}
               </dd>
             </div>

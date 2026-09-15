@@ -2,22 +2,35 @@ import { pgTable, serial, text, timestamp, pgEnum, integer, AnyPgColumn, uniqueI
 
 export const commonStatusEnum = pgEnum("status_common", ["Active", "Deleted"]);
 
+export const categoryTypeEnum = pgEnum("category_type", ["inventoriable", "consumable"]);
+
 export const departments = pgTable("departments", {
   id: serial("id").primaryKey(),
   department: text("department").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at"),
-  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+});
+
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  type: categoryTypeEnum("type").notNull(),
+  description: text("description"),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
 });
 
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
   role: text("role").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at"),
-  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
 });
 
 export const users = pgTable("users", {
@@ -29,9 +42,9 @@ export const users = pgTable("users", {
   departmentId: integer("department_id").references(() => departments.id),
   roleId: integer("role_id").references(() => roles.id),
   status: commonStatusEnum("status").notNull().default("Active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at"),
-  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
   createdBy: integer("created_by").references((): AnyPgColumn => users.id),
   updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
   deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
@@ -45,18 +58,18 @@ export const pages = pgTable("pages", {
   parentId: integer("parent_id").references((): AnyPgColumn => pages.id),
   order: integer("order"),
   status: commonStatusEnum("status").notNull().default("Active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at"),
-  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
 });
 
 export const permissions = pgTable("permissions", {
   id: serial("id").primaryKey(),
   permission: text("permission").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at"),
-  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
 });
 
 export const rolePermissions = pgTable("role_permissions", {
@@ -64,7 +77,7 @@ export const rolePermissions = pgTable("role_permissions", {
   roleId: integer("role_id").notNull().references(() => roles.id),
   pageId: integer("page_id").notNull().references(() => pages.id),
   permissionId: integer("permission_id").notNull().references(() => permissions.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
 }, (t) => [
   uniqueIndex("role_page_permission_idx").on(t.roleId, t.pageId, t.permissionId),
 ]);
@@ -99,7 +112,7 @@ export const settingsApp = pgTable("settings_app", {
   primaryStorage: text("primary_storage").notNull().default("filesystem"),
   downloadLinkAndroid: text("download_link_android"),
   downloadLinkIos: text("download_link_ios"),
-  updatedAt: timestamp("updated_at"),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
 });
 
 export const settingsMail = pgTable("settings_mail", {
@@ -111,14 +124,14 @@ export const settingsMail = pgTable("settings_mail", {
   smtpFromEmail: text("smtp_from_email"),
   smtpSenderName: text("smtp_sender_name"),
   smtpCrypto: text("smtp_crypto"),
-  updatedAt: timestamp("updated_at"),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
 });
 
 export const settingsSms = pgTable("settings_sms", {
   id: serial("id").primaryKey(),
   textbeeApiKey: text("textbee_api_key"),
   textbeeDeviceId: text("textbee_device_id"),
-  updatedAt: timestamp("updated_at"),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
 });
 
 export const settingsCloudinary = pgTable("settings_cloudinary", {
@@ -126,13 +139,13 @@ export const settingsCloudinary = pgTable("settings_cloudinary", {
   cloudinaryName: text("cloudinary_name"),
   cloudinaryApiKey: text("cloudinary_api_key"),
   cloudinaryApiSecret: text("cloudinary_api_secret"),
-  updatedAt: timestamp("updated_at"),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
 });
 
 export const refreshTokens = pgTable("refresh_tokens", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   token: text("token").notNull().unique(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
 });

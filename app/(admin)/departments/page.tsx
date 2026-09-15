@@ -1,11 +1,13 @@
 import { DepartmentsTable } from "@/components/departments/departments-table";
+import { getAppTimezone } from "@/lib/settings";
 
 export const metadata = {
   title: "Departments",
   description: "Manage system departments",
 };
 
-export default function DepartmentsPage() {
+export default async function DepartmentsPage() {
+  const timezone = await getAppTimezone();
   return (
     <div className="space-y-4">
       {/* Page Header */}
@@ -26,7 +28,7 @@ export default function DepartmentsPage() {
           </h2>
         </div>
         <div className="p-4">
-          <DepartmentsTable />
+          <DepartmentsTable timezone={timezone} />
         </div>
       </div>
     </div>

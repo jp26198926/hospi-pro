@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Eye, Pencil, Trash2, ArrowUpDown, RotateCcw, Copy } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/datetime";
 
 export interface Role {
   id: number;
@@ -19,9 +19,10 @@ interface ColumnActions {
   onDelete: (role: Role) => void;
   onRestore: (role: Role) => void;
   onClone: (role: Role) => void;
+  timezone: string;
 }
 
-export function getColumns({ onView, onEdit, onDelete, onRestore, onClone }: ColumnActions): ColumnDef<Role>[] {
+export function getColumns({ onView, onEdit, onDelete, onRestore, onClone, timezone }: ColumnActions): ColumnDef<Role>[] {
   return [
     {
       accessorKey: "no",
@@ -92,7 +93,7 @@ export function getColumns({ onView, onEdit, onDelete, onRestore, onClone }: Col
       },
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {format(new Date(row.original.createdAt), "MMM dd, yyyy HH:mm")}
+          {formatDateTime(row.original.createdAt, timezone)}
         </span>
       ),
     },
@@ -112,7 +113,7 @@ export function getColumns({ onView, onEdit, onDelete, onRestore, onClone }: Col
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original.updatedAt
-            ? format(new Date(row.original.updatedAt), "MMM dd, yyyy HH:mm")
+            ? formatDateTime(row.original.updatedAt, timezone)
             : "-"}
         </span>
       ),

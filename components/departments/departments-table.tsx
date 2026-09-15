@@ -40,13 +40,13 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/datetime";
 import { getColumns, Department } from "./departments-columns";
 import { DepartmentFormModal } from "./department-form-modal";
 import { DepartmentDeleteModal } from "./department-delete-modal";
 import { DepartmentSearchModal } from "./department-search-modal";
 
-export function DepartmentsTable() {
+export function DepartmentsTable({ timezone }: { timezone: string }) {
   const router = useRouter();
   const [data, setData] = useState<Department[]>([]);
   const [total, setTotal] = useState(0);
@@ -141,6 +141,7 @@ export function DepartmentsTable() {
     onEdit: handleEdit,
     onDelete: handleDelete,
     onRestore: handleRestore,
+    timezone,
   });
 
   const table = useReactTable({
@@ -166,8 +167,8 @@ export function DepartmentsTable() {
         idx + 1,
         dept.department,
         dept.status,
-        format(new Date(dept.createdAt), "MMM dd, yyyy HH:mm"),
-        dept.updatedAt ? format(new Date(dept.updatedAt), "MMM dd, yyyy HH:mm") : "-",
+        formatDateTime(dept.createdAt, timezone),
+        dept.updatedAt ? formatDateTime(dept.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -179,8 +180,8 @@ export function DepartmentsTable() {
       "#": idx + 1,
       Department: dept.department,
       Status: dept.status,
-      "Created At": format(new Date(dept.createdAt), "MMM dd, yyyy HH:mm"),
-      "Updated At": dept.updatedAt ? format(new Date(dept.updatedAt), "MMM dd, yyyy HH:mm") : "-",
+      "Created At": formatDateTime(dept.createdAt, timezone),
+      "Updated At": dept.updatedAt ? formatDateTime(dept.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -286,8 +287,8 @@ export function DepartmentsTable() {
               <div className="px-4 py-3">
                 <p className="text-base font-semibold text-[#337ab7]">{department.department}</p>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <p><span className="font-medium text-[#666]">Created:</span> {format(new Date(department.createdAt), "MMM dd, yyyy HH:mm")}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {department.updatedAt ? format(new Date(department.updatedAt), "MMM dd, yyyy HH:mm") : "-"}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(department.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {department.updatedAt ? formatDateTime(department.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
               <div className="flex border-t border-[#eee]">

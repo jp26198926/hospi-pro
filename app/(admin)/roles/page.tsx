@@ -1,11 +1,13 @@
 import { RolesTable } from "@/components/roles/roles-table";
+import { getAppTimezone } from "@/lib/settings";
 
 export const metadata = {
   title: "Roles",
   description: "Manage system roles",
 };
 
-export default function RolesPage() {
+export default async function RolesPage() {
+  const timezone = await getAppTimezone();
   return (
     <div className="space-y-4">
       {/* Page Header */}
@@ -26,7 +28,7 @@ export default function RolesPage() {
           </h2>
         </div>
         <div className="p-4">
-          <RolesTable />
+          <RolesTable timezone={timezone} />
         </div>
       </div>
     </div>

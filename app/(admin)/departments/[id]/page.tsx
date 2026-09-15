@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { departments } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
-import { format } from "date-fns";
+import { getAppTimezone } from "@/lib/settings";
+import { formatDateTimeLong } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +34,8 @@ export default async function DepartmentDetailPage({ params }: Props) {
     .where(and(eq(departments.id, departmentId), ne(departments.status, "Deleted")));
 
   if (!department) notFound();
+
+  const tz = await getAppTimezone();
 
   return (
     <div className="space-y-4">
@@ -86,14 +89,14 @@ export default async function DepartmentDetailPage({ params }: Props) {
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Created At</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {format(new Date(department.createdAt), "MMMM dd, yyyy HH:mm:ss")}
+                {formatDateTimeLong(department.createdAt, tz)}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Updated At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {department.updatedAt
-                  ? format(new Date(department.updatedAt), "MMMM dd, yyyy HH:mm:ss")
+                  ? formatDateTimeLong(department.updatedAt, tz)
                   : "-"}
               </dd>
             </div>
@@ -101,7 +104,7 @@ export default async function DepartmentDetailPage({ params }: Props) {
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Deleted At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {department.deletedAt
-                  ? format(new Date(department.deletedAt), "MMMM dd, yyyy HH:mm:ss")
+                  ? formatDateTimeLong(department.deletedAt, tz)
                   : "-"}
               </dd>
             </div>

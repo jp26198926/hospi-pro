@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { permissions } from "@/lib/db/schema";
+import { categories } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
 import { formatDateTimeLong } from "@/lib/datetime";
@@ -15,25 +15,25 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const [permission] = await db
+  const [category] = await db
     .select()
-    .from(permissions)
-    .where(and(eq(permissions.id, parseInt(id)), ne(permissions.status, "Deleted")));
-  return { title: permission ? `Permission: ${permission.permission}` : "Permission Not Found" };
+    .from(categories)
+    .where(and(eq(categories.id, parseInt(id)), ne(categories.status, "Deleted")));
+  return { title: category ? `Category: ${category.name}` : "Category Not Found" };
 }
 
-export default async function PermissionDetailPage({ params }: Props) {
+export default async function CategoryDetailPage({ params }: Props) {
   const { id } = await params;
-  const permissionId = parseInt(id);
+  const categoryId = parseInt(id);
 
-  if (isNaN(permissionId)) notFound();
+  if (isNaN(categoryId)) notFound();
 
-  const [permission] = await db
+  const [category] = await db
     .select()
-    .from(permissions)
-    .where(and(eq(permissions.id, permissionId), ne(permissions.status, "Deleted")));
+    .from(categories)
+    .where(and(eq(categories.id, categoryId), ne(categories.status, "Deleted")));
 
-  if (!permission) notFound();
+  if (!category) notFound();
 
   const tz = await getAppTimezone();
 
@@ -42,15 +42,15 @@ export default async function PermissionDetailPage({ params }: Props) {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-[#337ab7]">Permission Details</h1>
+          <h1 className="text-xl font-semibold text-[#337ab7]">Category Details</h1>
           <p className="text-sm text-muted-foreground">
-            View permission information and details.
+            View category information and details.
           </p>
         </div>
-        <Link href="/permissions">
+        <Link href="/categories">
           <Button variant="outline" size="sm" className="border-[#ccc]">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Permissions
+            Back to Categories
           </Button>
         </Link>
       </div>
@@ -59,52 +59,70 @@ export default async function PermissionDetailPage({ params }: Props) {
       <div className="rounded-sm border border-[#ddd] bg-white shadow-sm">
         <div className="border-b border-[#ddd] bg-[#f8f8f8] px-4 py-3">
           <h2 className="text-sm font-semibold text-[#337ab7]">
-            Permission Information
+            Category Information
           </h2>
         </div>
         <div className="p-6">
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">ID</dt>
-              <dd className="mt-1 text-sm font-medium text-foreground">{permission.id}</dd>
+              <dd className="mt-1 text-sm font-medium text-foreground">{category.id}</dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
-              <dt className="text-xs font-semibold uppercase text-muted-foreground">Permission Name</dt>
-              <dd className="mt-1 text-sm font-semibold text-foreground">{permission.permission}</dd>
+              <dt className="text-xs font-semibold uppercase text-muted-foreground">Name</dt>
+              <dd className="mt-1 text-sm font-semibold text-foreground">{category.name}</dd>
+            </div>
+            <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
+              <dt className="text-xs font-semibold uppercase text-muted-foreground">Type</dt>
+              <dd className="mt-1">
+                <span
+                  className={`inline-block px-2 py-0.5 text-xs font-medium ${
+                    category.type === "inventoriable"
+                      ? "bg-[#337ab7] text-white"
+                      : "bg-[#f0ad4e] text-white"
+                  }`}
+                >
+                  {category.type === "inventoriable" ? "Inventoriable" : "Consumable"}
+                </span>
+              </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Status</dt>
               <dd className="mt-1">
                 <span
                   className={`inline-block px-2 py-0.5 text-xs font-medium ${
-                    permission.status === "Active"
+                    category.status === "Active"
                       ? "bg-[#5cb85c] text-white"
                       : "bg-[#999] text-white"
                   }`}
                 >
-                  {permission.status}
+                  {category.status}
                 </span>
               </dd>
+            </div>
+            <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4 sm:col-span-2">
+              <dt className="text-xs font-semibold uppercase text-muted-foreground">Description</dt>
+              <dd className="mt-1 text-sm text-foreground">{category.description || "-"}</dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Created At</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {formatDateTimeLong(permission.createdAt, tz)}
+                {formatDateTimeLong(category.createdAt, tz)}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Updated At</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {permission.updatedAt
-                  ? formatDateTimeLong(permission.updatedAt, tz)
+                {category.updatedAt
+                  ? formatDateTimeLong(category.updatedAt, tz)
                   : "-"}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Deleted At</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {permission.deletedAt
-                  ? formatDateTimeLong(permission.deletedAt, tz)
+                {category.deletedAt
+                  ? formatDateTimeLong(category.deletedAt, tz)
                   : "-"}
               </dd>
             </div>

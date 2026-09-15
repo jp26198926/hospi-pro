@@ -4,9 +4,11 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Eye, Pencil, Trash2, ArrowUpDown, RotateCcw } from "lucide-react";
 import { formatDateTime } from "@/lib/datetime";
 
-export interface Permission {
+export interface Category {
   id: number;
-  permission: string;
+  name: string;
+  type: "inventoriable" | "consumable";
+  description: string | null;
   status: "Active" | "Deleted";
   createdAt: Date;
   updatedAt: Date | null;
@@ -14,14 +16,14 @@ export interface Permission {
 }
 
 interface ColumnActions {
-  onView: (permission: Permission) => void;
-  onEdit: (permission: Permission) => void;
-  onDelete: (permission: Permission) => void;
-  onRestore: (permission: Permission) => void;
+  onView: (category: Category) => void;
+  onEdit: (category: Category) => void;
+  onDelete: (category: Category) => void;
+  onRestore: (category: Category) => void;
   timezone: string;
 }
 
-export function getColumns({ onView, onEdit, onDelete, onRestore, timezone }: ColumnActions): ColumnDef<Permission>[] {
+export function getColumns({ onView, onEdit, onDelete, onRestore, timezone }: ColumnActions): ColumnDef<Category>[] {
   return [
     {
       accessorKey: "no",
@@ -33,21 +35,63 @@ export function getColumns({ onView, onEdit, onDelete, onRestore, timezone }: Co
       size: 50,
     },
     {
-      accessorKey: "permission",
+      accessorKey: "name",
       header: ({ column }) => {
         return (
           <button
             className="flex items-center gap-1 text-xs font-semibold uppercase text-[#666] hover:text-[#337ab7]"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Permission
+            Name
             <ArrowUpDown className="h-3 w-3" />
           </button>
         );
       },
       cell: ({ row }) => (
-        <span className="font-medium text-[#337ab7]">{row.original.permission}</span>
+        <span className="font-medium text-[#337ab7]">{row.original.name}</span>
       ),
+    },
+    {
+      accessorKey: "type",
+      header: ({ column }) => {
+        return (
+          <button
+            className="flex items-center gap-1 text-xs font-semibold uppercase text-[#666] hover:text-[#337ab7]"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Type
+            <ArrowUpDown className="h-3 w-3" />
+          </button>
+        );
+      },
+      cell: ({ row }) => {
+        const type = row.original.type;
+        return (
+          <span
+            className={`inline-block px-2 py-0.5 text-xs font-medium ${
+              type === "inventoriable"
+                ? "bg-[#337ab7] text-white"
+                : "bg-[#f0ad4e] text-white"
+            }`}
+          >
+            {type === "inventoriable" ? "Inventoriable" : "Consumable"}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {row.original.description
+            ? row.original.description.length > 50
+              ? `${row.original.description.slice(0, 50)}...`
+              : row.original.description
+            : "-"}
+        </span>
+      ),
+      enableSorting: false,
     },
     {
       accessorKey: "status",
@@ -123,26 +167,26 @@ export function getColumns({ onView, onEdit, onDelete, onRestore, timezone }: Co
       enableSorting: false,
       size: 120,
       cell: ({ row }) => {
-        const permission = row.original;
+        const category = row.original;
         return (
           <div className="flex items-center gap-1">
             <button
-              onClick={() => onView(permission)}
+              onClick={() => onView(category)}
               title="View"
               className="inline-flex h-7 w-7 items-center justify-center bg-[#5cb85c] text-white transition-colors hover:bg-[#449d44]"
             >
               <Eye className="h-3.5 w-3.5" />
             </button>
             <button
-              onClick={() => onEdit(permission)}
+              onClick={() => onEdit(category)}
               title="Edit"
               className="inline-flex h-7 w-7 items-center justify-center bg-[#337ab7] text-white transition-colors hover:bg-[#286090]"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
-            {permission.status === "Active" ? (
+            {category.status === "Active" ? (
               <button
-                onClick={() => onDelete(permission)}
+                onClick={() => onDelete(category)}
                 title="Delete"
                 className="inline-flex h-7 w-7 items-center justify-center bg-[#d9534f] text-white transition-colors hover:bg-[#c9302c]"
               >
@@ -150,7 +194,7 @@ export function getColumns({ onView, onEdit, onDelete, onRestore, timezone }: Co
               </button>
             ) : (
               <button
-                onClick={() => onRestore(permission)}
+                onClick={() => onRestore(category)}
                 title="Restore"
                 className="inline-flex h-7 w-7 items-center justify-center bg-[#f0ad4e] text-white transition-colors hover:bg-[#ec971f]"
               >

@@ -41,28 +41,28 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { formatDateTime } from "@/lib/datetime";
-import { getColumns, Permission } from "./permissions-columns";
-import { PermissionFormModal } from "./permission-form-modal";
-import { PermissionDeleteModal } from "./permission-delete-modal";
-import { PermissionSearchModal } from "./permission-search-modal";
+import { getColumns, Category } from "./categories-columns";
+import { CategoryFormModal } from "./category-form-modal";
+import { CategoryDeleteModal } from "./category-delete-modal";
+import { CategorySearchModal } from "./category-search-modal";
 
-export function PermissionsTable({ timezone }: { timezone: string }) {
+export function CategoriesTable({ timezone }: { timezone: string }) {
   const router = useRouter();
-  const [data, setData] = useState<Permission[]>([]);
+  const [data, setData] = useState<Category[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Modal states
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [formModalMode, setFormModalMode] = useState<"add" | "edit">("add");
-  const [editPermission, setEditPermission] = useState<Permission | null>(null);
+  const [editCategory, setEditCategory] = useState<Category | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deletePermission, setDeletePermission] = useState<Permission | null>(null);
+  const [deleteCategory, setDeleteCategory] = useState<Category | null>(null);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   const totalPages = Math.ceil(total / limit);
@@ -79,11 +79,10 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
         sortOrder,
       });
       if (search) params.set("search", search);
-      if (statusFilter !== "all") {
-        params.set("status", statusFilter);
-      }
+      if (typeFilter !== "all") params.set("type", typeFilter);
+      if (statusFilter !== "all") params.set("status", statusFilter);
 
-      const res = await fetch(`/api/permissions?${params}`);
+      const res = await fetch(`/api/categories?${params}`);
       const json = await res.json();
 
       if (res.ok) {
@@ -91,42 +90,42 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
         setTotal(json.total);
       }
     } catch (error) {
-      console.error("Failed to fetch permissions:", error);
+      console.error("Failed to fetch categories:", error);
     } finally {
       setLoading(false);
     }
-  }, [page, limit, sorting, search, statusFilter]);
+  }, [page, limit, sorting, search, typeFilter, statusFilter]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleView = (permission: Permission) => {
-    router.push(`/permissions/${permission.id}`);
+  const handleView = (category: Category) => {
+    router.push(`/categories/${category.id}`);
   };
 
-  const handleEdit = (permission: Permission) => {
-    setEditPermission(permission);
+  const handleEdit = (category: Category) => {
+    setEditCategory(category);
     setFormModalMode("edit");
     setFormModalOpen(true);
   };
 
-  const handleDelete = (permission: Permission) => {
-    setDeletePermission(permission);
+  const handleDelete = (category: Category) => {
+    setDeleteCategory(category);
     setDeleteModalOpen(true);
   };
 
-  const handleRestore = async (permission: Permission) => {
+  const handleRestore = async (category: Category) => {
     try {
-      const res = await fetch(`/api/permissions/${permission.id}`, { method: "PATCH" });
+      const res = await fetch(`/api/categories/${category.id}`, { method: "PATCH" });
       const json = await res.json();
 
       if (!res.ok) {
-        toast.error(json.error || "Failed to restore permission");
+        toast.error(json.error || "Failed to restore category");
         return;
       }
 
-      toast.success("Permission restored successfully");
+      toast.success("Category restored successfully");
       fetchData();
     } catch {
       toast.error("An unexpected error occurred");
@@ -156,41 +155,43 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
     manualSorting: true,
   });
 
-  // Export to PDF
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text("Permissions Report", 14, 20);
+    doc.text("Categories Report", 14, 20);
 
     autoTable(doc, {
       startY: 30,
-      head: [["#", "Permission", "Status", "Created At", "Updated At"]],
-      body: data.map((perm, idx) => [
+      head: [["#", "Name", "Type", "Description", "Status", "Created At", "Updated At"]],
+      body: data.map((cat, idx) => [
         idx + 1,
-        perm.permission,
-        perm.status,
-        formatDateTime(perm.createdAt, timezone),
-        perm.updatedAt ? formatDateTime(perm.updatedAt, timezone) : "-",
+        cat.name,
+        cat.type === "inventoriable" ? "Inventoriable" : "Consumable",
+        cat.description || "-",
+        cat.status,
+        formatDateTime(cat.createdAt, timezone),
+        cat.updatedAt ? formatDateTime(cat.updatedAt, timezone) : "-",
       ]),
     });
 
-    doc.save("permissions.pdf");
+    doc.save("categories.pdf");
   };
 
-  // Export to Excel
   const exportExcel = () => {
-    const worksheetData = data.map((perm, idx) => ({
+    const worksheetData = data.map((cat, idx) => ({
       "#": idx + 1,
-      Permission: perm.permission,
-      Status: perm.status,
-      "Created At": formatDateTime(perm.createdAt, timezone),
-      "Updated At": perm.updatedAt ? formatDateTime(perm.updatedAt, timezone) : "-",
+      Name: cat.name,
+      Type: cat.type === "inventoriable" ? "Inventoriable" : "Consumable",
+      Description: cat.description || "-",
+      Status: cat.status,
+      "Created At": formatDateTime(cat.createdAt, timezone),
+      "Updated At": cat.updatedAt ? formatDateTime(cat.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Permissions");
-    XLSX.writeFile(workbook, "permissions.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Categories");
+    XLSX.writeFile(workbook, "categories.xlsx");
   };
 
   return (
@@ -199,7 +200,7 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => { setFormModalMode("add"); setEditPermission(null); setFormModalOpen(true); }}
+            onClick={() => { setFormModalMode("add"); setEditCategory(null); setFormModalOpen(true); }}
             className="bg-[#337ab7] text-white hover:bg-[#286090]"
           >
             <Plus className="h-4 w-4" />
@@ -258,7 +259,7 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No permissions found.
+                  No categories found.
                 </TableCell>
               </TableRow>
             )}
@@ -273,50 +274,58 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : data.length ? (
-          data.map((permission, index) => (
-            <div key={permission.id} className="border border-[#ddd] bg-white">
-              {/* Card header */}
+          data.map((category, index) => (
+            <div key={category.id} className="border border-[#ddd] bg-white">
               <div className="flex items-center justify-between border-b border-[#eee] bg-[#f8f8f8] px-4 py-2">
                 <span className="text-xs text-muted-foreground">#{index + 1}</span>
                 <span
                   className={`px-2 py-0.5 text-xs font-medium ${
-                    permission.status === "Active"
+                    category.status === "Active"
                       ? "bg-[#5cb85c] text-white"
                       : "bg-[#999] text-white"
                   }`}
                 >
-                  {permission.status}
+                  {category.status}
                 </span>
               </div>
-
-              {/* Card body */}
               <div className="px-4 py-3">
-                <p className="text-base font-semibold text-[#337ab7]">{permission.permission}</p>
+                <p className="text-base font-semibold text-[#337ab7]">{category.name}</p>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(permission.createdAt, timezone)}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {permission.updatedAt ? formatDateTime(permission.updatedAt, timezone) : "-"}</p>
+                  <p>
+                    <span className="font-medium text-[#666]">Type:</span>{" "}
+                    <span className={`inline-block px-1.5 py-0.5 text-xs font-medium ${
+                      category.type === "inventoriable"
+                        ? "bg-[#337ab7] text-white"
+                        : "bg-[#f0ad4e] text-white"
+                    }`}>
+                      {category.type === "inventoriable" ? "Inventoriable" : "Consumable"}
+                    </span>
+                  </p>
+                  {category.description && (
+                    <p><span className="font-medium text-[#666]">Description:</span> {category.description}</p>
+                  )}
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(category.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {category.updatedAt ? formatDateTime(category.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
-
-              {/* Card actions */}
               <div className="flex border-t border-[#eee]">
                 <button
-                  onClick={() => handleView(permission)}
+                  onClick={() => handleView(category)}
                   className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-[#5cb85c] transition-colors hover:bg-[#5cb85c]/10"
                 >
                   <Eye className="h-4 w-4" />
                   View
                 </button>
                 <button
-                  onClick={() => handleEdit(permission)}
+                  onClick={() => handleEdit(category)}
                   className="flex flex-1 items-center justify-center gap-1.5 border-l border-[#eee] py-2.5 text-xs font-medium text-[#337ab7] transition-colors hover:bg-[#337ab7]/10"
                 >
                   <Pencil className="h-4 w-4" />
                   Edit
                 </button>
-                {permission.status === "Active" ? (
+                {category.status === "Active" ? (
                   <button
-                    onClick={() => handleDelete(permission)}
+                    onClick={() => handleDelete(category)}
                     className="flex flex-1 items-center justify-center gap-1.5 border-l border-[#eee] py-2.5 text-xs font-medium text-[#d9534f] transition-colors hover:bg-[#d9534f]/10"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -324,7 +333,7 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleRestore(permission)}
+                    onClick={() => handleRestore(category)}
                     className="flex flex-1 items-center justify-center gap-1.5 border-l border-[#eee] py-2.5 text-xs font-medium text-[#f0ad4e] transition-colors hover:bg-[#f0ad4e]/10"
                   >
                     <RotateCcw className="h-4 w-4" />
@@ -336,7 +345,7 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
           ))
         ) : (
           <div className="border border-[#ddd] bg-white p-8 text-center text-sm text-muted-foreground">
-            No permissions found.
+            No categories found.
           </div>
         )}
       </div>
@@ -408,23 +417,23 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
       </div>
 
       {/* Modals */}
-      <PermissionFormModal
+      <CategoryFormModal
         open={formModalOpen}
         onOpenChange={setFormModalOpen}
         mode={formModalMode}
-        permission={editPermission}
+        category={editCategory}
         onSuccess={handleSuccess}
       />
-      <PermissionDeleteModal
+      <CategoryDeleteModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        permission={deletePermission}
+        category={deleteCategory}
         onSuccess={handleSuccess}
       />
-      <PermissionSearchModal
+      <CategorySearchModal
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
-        onSearch={(term, status) => { setSearch(term); setStatusFilter(status); setPage(1); }}
+        onSearch={(term, type, status) => { setSearch(term); setTypeFilter(type); setStatusFilter(status); setPage(1); }}
       />
     </div>
   );

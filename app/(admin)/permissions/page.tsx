@@ -1,11 +1,13 @@
 import { PermissionsTable } from "@/components/permissions/permissions-table";
+import { getAppTimezone } from "@/lib/settings";
 
 export const metadata = {
   title: "Permissions",
   description: "Manage system permissions",
 };
 
-export default function PermissionsPage() {
+export default async function PermissionsPage() {
+  const timezone = await getAppTimezone();
   return (
     <div className="space-y-4">
       {/* Page Header */}
@@ -26,7 +28,7 @@ export default function PermissionsPage() {
           </h2>
         </div>
         <div className="p-4">
-          <PermissionsTable />
+          <PermissionsTable timezone={timezone} />
         </div>
       </div>
     </div>
