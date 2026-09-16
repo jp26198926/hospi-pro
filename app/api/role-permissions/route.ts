@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { rolePermissions, pages, permissions } from "@/lib/db/schema";
 import { rolePermissionSchema } from "@/lib/validations/role-permission";
-import { eq, desc, asc, and, ilike, count as drizzleCount } from "drizzle-orm";
+import { eq, desc, asc, and, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
 import { invalidatePermissionCache } from "@/lib/permissions";
 
@@ -26,11 +26,11 @@ export async function GET(request: NextRequest) {
 
     const conditions = [eq(rolePermissions.roleId, parseInt(roleId))];
 
-    if (searchPage) {
-      conditions.push(ilike(pages.page, `%${searchPage}%`));
+    if (searchPage && searchPage !== "all") {
+      conditions.push(eq(pages.id, parseInt(searchPage)));
     }
-    if (searchPermission) {
-      conditions.push(ilike(permissions.permission, `%${searchPermission}%`));
+    if (searchPermission && searchPermission !== "all") {
+      conditions.push(eq(permissions.id, parseInt(searchPermission)));
     }
 
     const where = and(...conditions);
