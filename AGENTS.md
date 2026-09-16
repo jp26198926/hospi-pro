@@ -70,7 +70,7 @@ updatedAt timestamp("...", { withTimezone: true, mode: "date" })  nullable    se
 deletedAt timestamp("...", { withTimezone: true, mode: "date" })  nullable    set on DELETE, cleared on PATCH restore
 ```
 
-Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
+Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
 
 **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
 

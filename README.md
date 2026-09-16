@@ -77,6 +77,7 @@ app/
 ├── (admin)/              # Protected admin pages (with sidebar layout)
 │   ├── categories/
 │   ├── departments/
+│   ├── locations/
 │   ├── pages/
 │   ├── permissions/
 │   ├── roles/
@@ -94,6 +95,7 @@ app/
 │   ├── categories/
 │   ├── currencies/       # Currency lookup (auth-only)
 │   ├── departments/
+│   ├── locations/
 │   ├── pages/
 │   ├── permissions/
 │   ├── roles/
@@ -112,6 +114,7 @@ components/
 ├── categories/
 ├── departments/
 ├── layout/               # Sidebar, navbar, breadcrumb
+├── locations/
 ├── pages/
 ├── permissions/
 ├── role-permissions/
