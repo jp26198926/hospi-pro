@@ -189,7 +189,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-2">
+      <nav className={cn("flex-1 py-2", !collapsed && "overflow-y-auto sidebar-scroll")}>
         {navItems.map((item) => (
           <div key={item.label} className="group relative">
             {item.children ? (
@@ -338,7 +338,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onMobileClose
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto py-2">
+            <nav className="flex-1 overflow-y-auto sidebar-scroll py-2">
               {navItems.map((item) => (
                 <div key={item.label}>
                   {item.children ? (
