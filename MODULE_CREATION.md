@@ -42,14 +42,15 @@ export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   category: text("category").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at"),
-  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
 });
 ```
 
 - Column DB names are snake_case; TS property names are camelCase.
 - Always include the soft-delete trio: `status`, `createdAt`, `updatedAt`, `deletedAt`.
+- **All timestamps must use** `timestamp("...", { withTimezone: true, mode: "date" })` — this stores `timestamptz` and avoids double-offset bugs.
 - Reuse `commonStatusEnum` — do not create a new enum.
 
 Then push:
@@ -92,6 +93,30 @@ export type CategoryUpdateInput = z.infer<typeof categoryUpdateSchema>;
 
 Export `GET` and `POST`.
 
+**Permission checks** — add as first line inside each `try` block:
+
+```ts
+import { requirePermission } from "@/lib/api-auth";
+
+export async function GET(request: NextRequest) {
+  try {
+    const auth = await requirePermission(request, "/categories", "Read");
+    if (auth instanceof Response) return auth;
+    // ... existing logic
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const auth = await requirePermission(request, "/categories", "Add");
+    if (auth instanceof Response) return auth;
+    // ... existing logic
+  }
+}
+```
+
+The `pagePath` argument must match the `path` column in the `pages` table (e.g. `"/categories"`).
+
 **GET** — list with pagination/search/filter:
 - Query params: `page` (default 1), `limit` (default 10, max 100), `search`, `sortBy` (default `createdAt`), `sortOrder` (default `desc`), `status` (`all` | `Active` | `Deleted`).
 - Build a `conditions[]` array, combine with `and(...)` or `undefined`.
@@ -113,6 +138,16 @@ Copy `app/api/departments/route.ts` as the template.
 **File**: `app/api/categories/[id]/route.ts` (new)
 
 Export `GET`, `PUT`, `DELETE`, `PATCH`.
+
+**Permission checks** — add as first line inside each `try` block:
+
+```ts
+const auth = await requirePermission(request, "/categories", "Read");    // GET
+const auth = await requirePermission(request, "/categories", "Edit");    // PUT
+const auth = await requirePermission(request, "/categories", "Delete");  // DELETE
+const auth = await requirePermission(request, "/categories", "Restore"); // PATCH
+if (auth instanceof Response) return auth;
+```
 
 **Params** (Next.js 16 — `params` is a Promise):
 
@@ -208,15 +243,20 @@ export default function CategoriesLayout({ children }: { children: React.ReactNo
 ```
 
 **`page.tsx`** — index page:
+
+Add `requirePageRead` as the first line — shows 404 if the user lacks Read permission:
+
 ```tsx
 import { CategoriesTable } from "@/components/categories/categories-table";
+import { requirePageRead } from "@/lib/api-auth";
 
 export const metadata = {
   title: "Categories",
   description: "Manage system categories",
 };
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  await requirePageRead("/categories");
   return (
     <div className="space-y-4">
       <div>
@@ -237,11 +277,27 @@ export default function CategoriesPage() {
 ```
 
 **Optional `[id]/page.tsx`** — detail page (server component):
+- `await requirePageRead("/<path>")` as first line (same Read guard as index page).
 - `generateMetadata` queries DB for dynamic title.
 - `await params`, `notFound()` on invalid/missing.
 - Direct DB query (no API fetch).
-- Ace Admin card + `dl` grid; status badge; dates via `date-fns` `format`.
+- Ace Admin card + `dl` grid; status badge.
+- Dates via `formatDateTimeLong(date, tz)` from `lib/datetime.ts` — fetch timezone with `const tz = await getAppTimezone()` from `lib/settings.ts`.
 - Back button links to `/<plural>`.
+
+**Timezone prop for tables**: if your table displays dates, pass timezone from the page:
+
+```tsx
+import { getAppTimezone } from "@/lib/settings";
+
+export default async function CategoriesPage() {
+  await requirePageRead("/categories");
+  const timezone = await getAppTimezone();
+  return (/* ... */ <CategoriesTable timezone={timezone} />);
+}
+```
+
+Table components use `formatDateTime(date, timezone)` from `lib/datetime.ts` for card views and exports.
 
 ---
 
@@ -260,6 +316,7 @@ Available icon keys (mapped in `components/layout/sidebar.tsx`):
 - `parentId` = null for top-level; set to a parent's id for nested submenu.
 - `path` must match the `(admin)` route folder.
 - `order` controls sort (ascending, null last).
+- **Parent pages need a View grant** for children to appear in the sidebar. If the new page has a parent, ensure the role also has View on the parent page's row in `pages`.
 
 ---
 
@@ -271,21 +328,22 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 
 ## Checklist
 
-- [ ] `lib/db/schema.ts` — add table
+- [ ] `lib/db/schema.ts` — add table (timestamps with `withTimezone: true`)
 - [ ] `npm run db:push`
 - [ ] `lib/validations/<singular>.ts` — create
-- [ ] `app/api/<plural>/route.ts` — GET + POST
-- [ ] `app/api/<plural>/[id]/route.ts` — GET + PUT + DELETE + PATCH
+- [ ] `app/api/<plural>/route.ts` — GET (requirePermission Read) + POST (requirePermission Add)
+- [ ] `app/api/<plural>/[id]/route.ts` — GET (Read) + PUT (Edit) + DELETE (Delete) + PATCH (Restore)
 - [ ] `components/<plural>/<plural>-columns.tsx`
-- [ ] `components/<plural>/<plural>-table.tsx`
+- [ ] `components/<plural>/<plural>-table.tsx` (accepts `timezone` prop if showing dates)
 - [ ] `components/<plural>/<singular>-form-modal.tsx`
 - [ ] `components/<plural>/<singular>-delete-modal.tsx`
 - [ ] `components/<plural>/<singular>-search-modal.tsx`
 - [ ] `app/(admin)/<plural>/layout.tsx`
-- [ ] `app/(admin)/<plural>/page.tsx`
-- [ ] Optional: `app/(admin)/<plural>/[id]/page.tsx`
+- [ ] `app/(admin)/<plural>/page.tsx` (with `requirePageRead` guard + timezone prop)
+- [ ] Optional: `app/(admin)/<plural>/[id]/page.tsx` (with `requirePageRead` + `formatDateTimeLong`)
 - [ ] Insert row into `pages` table for sidebar
-- [ ] `npm run lint`
+- [ ] Grant View on parent page + View/Read on new page for roles that need access
+- [ ] `npm run lint` + `npx tsc --noEmit`
 
 ---
 
@@ -295,6 +353,9 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 - **Restore is inline PATCH** from the table action buttons — there is no restore modal component.
 - **PUT uses the create schema** (`<singular>Schema`), not the update schema. Status is never sent from forms.
 - **`params` is a Promise** in Next.js 16 — always `await params` in pages and route handlers.
+- **All timestamps** must use `timestamp("...", { withTimezone: true, mode: "date" })` — bare `timestamp()` causes double timezone offset bugs.
+- **Permission checks**: every API handler needs `requirePermission`; every page needs `requirePageRead`. Use the `pages` table `path` as the pagePath argument.
+- **`lib/datetime.ts` must stay pure** (no db/server imports) — client components import from it.
 - **FK dropdowns**: use `SearchableSelect` (`components/ui/searchable-select.tsx`), not base-ui `Select`. Use base-ui `Select` only for simple non-ID values (e.g. status All/Active/Deleted).
 - **Toast**: `import { toast } from "sonner"` — not from `components/ui/sonner`.
 - **Mobile**: table `hidden md:block`, cards `md:hidden`. All modals must trigger from both layouts.

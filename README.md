@@ -5,10 +5,14 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 ## Features
 
 - JWT authentication (access + refresh tokens)
-- Role and permission management
-- Dynamic sidebar navigation (driven by database)
+- **Full RBAC enforcement** — sidebar filtered by View permission, pages require Read (404 if denied), APIs enforce Read/Add/Edit/Delete/Restore/Export/Clone
+- Role and permission management with per-page grants
+- Dynamic sidebar navigation (driven by database, filtered by role)
+- Categories management (inventoriable / consumable)
+- Multi-currency support (155 ISO 4217 currencies)
+- Timezone-aware date display (configurable per app)
 - File upload with configurable storage (File System / Cloudinary)
-- Application settings (logo, favicon, name, storage type)
+- Application settings (logo, favicon, name, timezone, currency, storage type)
 - Password management (change password, forgot/reset flow)
 
 ## Tech Stack
@@ -64,12 +68,14 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 | `npm run db:migrate` | Apply pending migration files to database |
 | `npm run db:studio` | Open Drizzle Studio (database GUI) |
 | `npm run db:seed-timezones` | Seed timezone table |
+| `npm run db:seed-currencies` | Seed currency table |
 
 ## Project Structure
 
 ```
 app/
 ├── (admin)/              # Protected admin pages (with sidebar layout)
+│   ├── categories/
 │   ├── departments/
 │   ├── pages/
 │   ├── permissions/
@@ -85,6 +91,8 @@ app/
 │   └── reset-password/
 ├── api/                  # API routes
 │   ├── auth/             # Login, register, refresh, logout, me, change-password
+│   ├── categories/
+│   ├── currencies/       # Currency lookup (auth-only)
 │   ├── departments/
 │   ├── pages/
 │   ├── permissions/
@@ -101,6 +109,7 @@ app/
 └── favicon.ico/          # Dynamic favicon route
 components/
 ├── auth/                 # Login form, change password modal, profile modal
+├── categories/
 ├── departments/
 ├── layout/               # Sidebar, navbar, breadcrumb
 ├── pages/
@@ -114,14 +123,19 @@ components/
 ├── ui/                   # Reusable UI components (button, input, dialog, table, etc.)
 └── users/
 lib/
+├── api-auth.ts           # requirePermission, requireAuth, requirePageRead helpers
+├── api-client.ts         # apiFetch wrapper (attaches Bearer token)
 ├── auth.ts               # JWT generation/verification, bcrypt helpers
+├── datetime.ts           # Pure date formatting (no db imports)
 ├── db/
 │   ├── index.ts          # Drizzle database client
 │   └── schema.ts         # All table schemas
-├── settings.ts           # Cached app settings helper
+├── permissions.ts        # Cached RBAC permission lookups (30s TTL)
+├── settings.ts           # Cached app settings + getAppTimezone()
 ├── utils.ts              # cn() utility for classnames
 └── validations/          # Zod schemas per module
     ├── auth.ts
+    ├── category.ts
     ├── department.ts
     ├── page.ts
     ├── permission.ts
@@ -134,16 +148,28 @@ lib/
     └── user.ts
 proxy.ts                  # Next.js 16 middleware (auth gate)
 drizzle/                  # Database migration files
-scripts/                  # Seed scripts
+scripts/                  # Seed scripts (seed-timezones, seed-currencies)
 ```
 
 ## Architecture
 
 ### Authentication
 
-- **Access tokens** (JWT, 15 min expiry) stored in `localStorage`
+- **Access tokens** (JWT, 15 min expiry) stored in `localStorage` + readable `accessToken` cookie (for SSR page guards)
 - **Refresh tokens** (JWT, 7 days) stored in httpOnly cookies
 - `proxy.ts` acts as middleware — checks auth on every request and redirects unauthenticated users to `/login`
+
+### RBAC Enforcement
+
+Permissions are enforced at three levels:
+
+| Level | Mechanism | Permission |
+|---|---|---|
+| Sidebar menu | `/api/pages?mine=1` filters by role's View grants | View |
+| Page access | `requirePageRead("/path")` in server component → 404 | Read |
+| API routes | `requirePermission(request, "/path", "Permission")` → 401/403 | Read/Add/Edit/Delete/Restore/Export/Clone |
+
+Permission data lives in `role_permissions` (roleId, pageId, permissionId). Cached 30s per role in `lib/permissions.ts`. Cache invalidated on role-permission mutations.
 
 ### Route Groups
 
@@ -168,140 +194,23 @@ The app logo, favicon, name, and storage type are all configurable from `/settin
 
 ## How to Add a New Module
 
-This guide walks through adding a new module (e.g., "Categories") step by step.
+See **`MODULE_CREATION.md`** for the full step-by-step guide with naming conventions, code templates, and checklist.
 
-### Step 1: Database Schema
-
-Add your table to `lib/db/schema.ts`:
-
-```ts
-export const categories = pgTable("categories", {
-  id: serial("id").primaryKey(),
-  category: text("category").notNull().unique(),
-  status: commonStatusEnum("status").notNull().default("Active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at"),
-  deletedAt: timestamp("deleted_at"),
-});
-```
-
-Then push the schema:
-
-```bash
-npm run db:push
-```
-
-### Step 2: Validation Schema
-
-Create `lib/validations/category.ts`:
-
-```ts
-import { z } from "zod";
-
-export const categorySchema = z.object({
-  category: z.string().min(1, "Category name is required").max(100),
-});
-
-export type CategoryInput = z.infer<typeof categorySchema>;
-```
-
-### Step 3: API Routes
-
-Create `app/api/categories/route.ts`:
-
-- `GET` — List all categories (with search, status filter, pagination)
-- `POST` — Create a new category
-
-Create `app/api/categories/[id]/route.ts`:
-
-- `GET` — Get a single category
-- `PUT` — Update a category
-- `DELETE` — Soft delete (set status to `"Deleted"`)
-
-Follow the pattern in existing routes like `app/api/departments/route.ts`.
-
-### Step 4: UI Components
-
-Create the following in `components/categories/`:
-
-- **`categories-table.tsx`** — Data table with search, status filter, and action buttons (edit, delete, restore)
-- **`category-form-modal.tsx`** — Create/edit modal form
-- **`category-delete-modal.tsx`** — Delete confirmation modal
-
-Follow the pattern in existing components like `components/departments/`.
-
-### Step 5: Page
-
-Create `app/(admin)/categories/page.tsx`:
-
-```tsx
-import { CategoriesTable } from "@/components/categories/categories-table";
-
-export const metadata = {
-  title: "Categories",
-  description: "Manage system categories",
-};
-
-export default function CategoriesPage() {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[#337ab7]">Categories</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage system categories.
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-sm border border-[#ddd] bg-white shadow-sm">
-        <div className="border-b border-[#ddd] bg-[#f8f8f8] px-4 py-3">
-          <h2 className="text-sm font-semibold text-[#337ab7]">
-            Categories Management
-          </h2>
-        </div>
-        <div className="p-4">
-          <CategoriesTable />
-        </div>
-      </div>
-    </div>
-  );
-}
-```
-
-Create `app/(admin)/categories/layout.tsx`:
-
-```tsx
-export default function CategoriesLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <>{children}</>;
-}
-```
-
-### Step 6: Register in Sidebar
-
-The sidebar is dynamic — insert a row into the `pages` table:
-
-```sql
-INSERT INTO pages (page, path, icon, "order", status)
-VALUES ('Categories', '/categories', 'folder', 5, 'Active');
-```
-
-Available icons: `home`, `settings`, `users`, `shield`, `file-text`, `bar-chart-3`, `calendar`, `mail`, `bell`, `search`, `layout-dashboard`, `lock`, `globe`, `heart`, `star`, `bookmark`, `tag`, `folder`, `image`, `video`, `music`, `phone`, `map-pin`, `shopping-cart`, `credit-card`.
-
-### Step 7: Public API Routes (if needed)
-
-If any of your API endpoints should be publicly accessible (no auth required), add them to `PUBLIC_API_ROUTES` in `proxy.ts`.
+Quick overview:
+1. Add table to `lib/db/schema.ts` (use `timestamp({ withTimezone: true, mode: "date" })`)
+2. Create `lib/validations/<singular>.ts` (zod schemas)
+3. Create `app/api/<plural>/route.ts` + `[id]/route.ts` (with `requirePermission` calls)
+4. Create `components/<plural>/` (columns, table, form modal, delete modal, search modal)
+5. Create `app/(admin)/<plural>/page.tsx` (with `requirePageRead` guard)
+6. Insert row into `pages` table for sidebar registration
+7. Grant View on parent page + Read on new page for roles that should access it
 
 ---
 
 ## Contributing
 
 1. Create a feature branch from `main`
-2. Follow the existing patterns: schema → validation → API → component → page
+2. Follow the existing patterns: schema → validation → API (with `requirePermission`) → component → page (with `requirePageRead`)
 3. Run `npm run lint` before committing
 4. Use soft deletes (`status: "Deleted"`) — never hard delete records
 5. All API routes require Bearer token auth unless added to `PUBLIC_API_ROUTES` in `proxy.ts`
