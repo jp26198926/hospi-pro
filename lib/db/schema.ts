@@ -33,6 +33,16 @@ export const locations = pgTable("locations", {
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
 });
 
+export const uoms = pgTable("uoms", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull().unique(),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+});
+
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
   role: text("role").notNull().unique(),

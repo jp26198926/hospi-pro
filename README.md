@@ -85,6 +85,7 @@ app/
 │   ├── settings-cloudinary/
 │   ├── settings-mail/
 │   ├── settings-sms/
+│   ├── uoms/
 │   └── users/
 ├── (auth)/               # Public auth pages
 │   ├── login/
@@ -105,6 +106,7 @@ app/
 │   ├── settings-mail/
 │   ├── settings-sms/
 │   ├── timezones/
+│   ├── uoms/
 │   ├── upload/
 │   └── users/
 ├── layout.tsx            # Root layout
@@ -124,6 +126,7 @@ components/
 ├── settings-mail/
 ├── settings-sms/
 ├── ui/                   # Reusable UI components (button, input, dialog, table, etc.)
+├── uoms/
 └── users/
 lib/
 ├── api-auth.ts           # requirePermission, requireAuth, requirePageRead helpers
@@ -140,6 +143,7 @@ lib/
     ├── auth.ts
     ├── category.ts
     ├── department.ts
+    ├── location.ts
     ├── page.ts
     ├── permission.ts
     ├── role.ts
@@ -148,6 +152,7 @@ lib/
     ├── settings-cloudinary.ts
     ├── settings-mail.ts
     ├── settings-sms.ts
+    ├── uom.ts
     └── user.ts
 proxy.ts                  # Next.js 16 middleware (auth gate)
 drizzle/                  # Database migration files
