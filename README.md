@@ -80,6 +80,7 @@ app/
 │   ├── locations/
 │   ├── pages/
 │   ├── permissions/
+│   ├── products/
 │   ├── roles/
 │   ├── settings-application/
 │   ├── settings-cloudinary/
@@ -100,6 +101,7 @@ app/
 │   ├── locations/
 │   ├── pages/
 │   ├── permissions/
+│   ├── products/
 │   ├── roles/
 │   ├── role-permissions/
 │   ├── settings-application/
@@ -121,6 +123,7 @@ components/
 ├── locations/
 ├── pages/
 ├── permissions/
+├── products/
 ├── role-permissions/
 ├── roles/
 ├── settings-application/
@@ -149,6 +152,7 @@ lib/
     ├── location.ts
     ├── page.ts
     ├── permission.ts
+    ├── product.ts
     ├── role.ts
     ├── role-permission.ts
     ├── settings-application.ts

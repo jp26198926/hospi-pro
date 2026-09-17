@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, pgEnum, integer, AnyPgColumn, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, pgEnum, integer, decimal, AnyPgColumn, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const commonStatusEnum = pgEnum("status_common", ["Active", "Deleted"]);
 
@@ -49,6 +49,27 @@ export const suppliers = pgTable("suppliers", {
   contactPerson: text("contact_person"),
   phone: text("phone"),
   email: text("email"),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
+  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
+  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull().unique(),
+  categoryId: integer("category_id").references(() => categories.id),
+  brand: text("brand"),
+  model: text("model"),
+  minStock: decimal("min_stock", { precision: 10, scale: 4 }).notNull().default("0"),
+  stock: decimal("stock", { precision: 10, scale: 4 }).notNull().default("0"),
+  lastCost: decimal("last_cost", { precision: 10, scale: 4 }).notNull().default("0"),
+  avgCost: decimal("avg_cost", { precision: 10, scale: 4 }).notNull().default("0"),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),

@@ -76,7 +76,7 @@ deletedReason  text                  nullable  set on DELETE from optional reque
 
 **Audit fields**: `requirePermission()` returns `AuthUser` with `userId` — use it to set `createdBy`/`updatedBy`/`deletedBy`. DELETE accepts optional JSON body `{ reason: string }` to populate `deletedReason`. PATCH (restore) must clear `deletedBy`, `deletedReason`, and set `updatedBy`.
 
-Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `suppliers`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
+Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `suppliers`, `products`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
 
 **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
 
