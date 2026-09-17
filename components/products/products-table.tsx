@@ -57,6 +57,7 @@ export function ProductsTable({ timezone }: { timezone: string }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [gstTypeFilter, setGstTypeFilter] = useState("all");
 
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [formModalMode, setFormModalMode] = useState<"add" | "edit">("add");
@@ -81,6 +82,7 @@ export function ProductsTable({ timezone }: { timezone: string }) {
       if (search) params.set("search", search);
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (categoryFilter !== "all") params.set("categoryId", categoryFilter);
+      if (gstTypeFilter !== "all") params.set("gstTypeId", gstTypeFilter);
 
       const res = await fetch(`/api/products?${params}`);
       const json = await res.json();
@@ -94,7 +96,7 @@ export function ProductsTable({ timezone }: { timezone: string }) {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, sorting, search, statusFilter, categoryFilter]);
+  }, [page, limit, sorting, search, statusFilter, categoryFilter, gstTypeFilter]);
 
   useEffect(() => {
     fetchData();
@@ -162,16 +164,17 @@ export function ProductsTable({ timezone }: { timezone: string }) {
 
     autoTable(doc, {
       startY: 30,
-      head: [["#", "Code", "Name", "Category", "Brand", "Stock", "Status", "Created At"]],
+      head: [["#", "Code", "Name", "Category", "Brand", "GST Type", "Selling Price", "Stock", "Status"]],
       body: data.map((p, idx) => [
         idx + 1,
         p.code,
         p.name,
         p.categoryName || "-",
         p.brand || "-",
+        p.gstTypeName || "-",
+        Number(p.sellingPrice).toFixed(4),
         Number(p.stock).toFixed(4),
         p.status,
-        formatDateTime(p.createdAt, timezone),
       ]),
     });
 
@@ -186,10 +189,12 @@ export function ProductsTable({ timezone }: { timezone: string }) {
       Category: p.categoryName || "-",
       Brand: p.brand || "-",
       Model: p.model || "-",
+      "GST Type": p.gstTypeName || "-",
       "Min Stock": Number(p.minStock).toFixed(4),
       Stock: Number(p.stock).toFixed(4),
       "Last Cost": Number(p.lastCost).toFixed(4),
       "Avg Cost": Number(p.avgCost).toFixed(4),
+      "Selling Price": Number(p.sellingPrice).toFixed(4),
       Status: p.status,
       "Created At": formatDateTime(p.createdAt, timezone),
     }));
@@ -428,7 +433,7 @@ export function ProductsTable({ timezone }: { timezone: string }) {
       <ProductSearchModal
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
-        onSearch={(term, status, catId) => { setSearch(term); setStatusFilter(status); setCategoryFilter(catId); setPage(1); }}
+        onSearch={(term, status, catId, gstId) => { setSearch(term); setStatusFilter(status); setCategoryFilter(catId); setGstTypeFilter(gstId); setPage(1); }}
       />
     </div>
   );

@@ -22,6 +22,12 @@ interface CategoryOption {
   name: string;
 }
 
+interface GstTypeOption {
+  id: number;
+  code: string;
+  name: string;
+}
+
 interface ProductFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -38,6 +44,7 @@ export function ProductFormModal({
   onSuccess,
 }: ProductFormModalProps) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [gstTypeOptions, setGstTypeOptions] = useState<GstTypeOption[]>([]);
 
   const {
     register,
@@ -51,12 +58,13 @@ export function ProductFormModal({
 
   useEffect(() => {
     if (open) {
-      fetch("/api/categories?status=Active&limit=100")
-        .then((r) => r.json())
-        .then((json) => {
-          if (json.data) setCategories(json.data);
-        })
-        .catch(() => {});
+      Promise.all([
+        fetch("/api/categories?status=Active&limit=100").then((r) => r.json()),
+        fetch("/api/gst-types?status=Active&limit=100").then((r) => r.json()),
+      ]).then(([catJson, gstJson]) => {
+        if (catJson.data) setCategories(catJson.data);
+        if (gstJson.data) setGstTypeOptions(gstJson.data);
+      }).catch(() => {});
     }
   }, [open]);
 
@@ -72,6 +80,8 @@ export function ProductFormModal({
           stock: Number(product.stock),
           lastCost: Number(product.lastCost),
           avgCost: Number(product.avgCost),
+          sellingPrice: Number(product.sellingPrice),
+          gstTypeId: product.gstTypeId,
         });
       } else {
         reset({
@@ -83,6 +93,8 @@ export function ProductFormModal({
           stock: 0,
           lastCost: 0,
           avgCost: 0,
+          sellingPrice: 0,
+          gstTypeId: 0,
         });
       }
     }
@@ -91,6 +103,11 @@ export function ProductFormModal({
   const categoryOptions = categories.map((c) => ({
     value: String(c.id),
     label: c.name,
+  }));
+
+  const gstTypeSelectOptions = gstTypeOptions.map((g) => ({
+    value: String(g.id),
+    label: `${g.code} — ${g.name}`,
   }));
 
   const onSubmit = async (data: ProductInput) => {
@@ -253,6 +270,43 @@ export function ProductFormModal({
                 {...register("avgCost", { valueAsNumber: true })}
                 className="border-[#ccc] focus:border-[#337ab7] focus:ring-[#337ab7]"
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="sellingPrice" className="text-sm font-medium text-[#333]">
+                Selling Price
+              </Label>
+              <Input
+                id="sellingPrice"
+                type="number"
+                step="0.0001"
+                min="0"
+                {...register("sellingPrice", { valueAsNumber: true })}
+                className="border-[#ccc] focus:border-[#337ab7] focus:ring-[#337ab7]"
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label className="text-sm font-medium text-[#333]">
+                GST Type <span className="text-red-500">*</span>
+              </Label>
+              <Controller
+                control={control}
+                name="gstTypeId"
+                render={({ field }) => (
+                  <SearchableSelect
+                    options={gstTypeSelectOptions}
+                    value={field.value ? String(field.value) : ""}
+                    onValueChange={(val) => field.onChange(val ? parseInt(val) : 0)}
+                    placeholder="Select GST type"
+                  />
+                )}
+              />
+              {errors.gstTypeId && (
+                <p className="text-sm text-red-500">{errors.gstTypeId.message}</p>
+              )}
             </div>
           </div>
 

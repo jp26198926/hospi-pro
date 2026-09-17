@@ -70,6 +70,8 @@ export const products = pgTable("products", {
   stock: decimal("stock", { precision: 10, scale: 4 }).notNull().default("0"),
   lastCost: decimal("last_cost", { precision: 10, scale: 4 }).notNull().default("0"),
   avgCost: decimal("avg_cost", { precision: 10, scale: 4 }).notNull().default("0"),
+  sellingPrice: decimal("selling_price", { precision: 10, scale: 4 }).notNull().default("0"),
+  gstTypeId: integer("gst_type_id").notNull().references((): AnyPgColumn => gstTypes.id),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),

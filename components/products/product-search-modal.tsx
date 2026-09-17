@@ -22,10 +22,16 @@ interface CategoryOption {
   name: string;
 }
 
+interface GstTypeOption {
+  id: number;
+  code: string;
+  name: string;
+}
+
 interface ProductSearchModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSearch: (term: string, status: string, categoryId: string) => void;
+  onSearch: (term: string, status: string, categoryId: string, gstTypeId: string) => void;
 }
 
 export function ProductSearchModal({
@@ -36,16 +42,19 @@ export function ProductSearchModal({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [gstTypeFilter, setGstTypeFilter] = useState("all");
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [gstTypes, setGstTypes] = useState<GstTypeOption[]>([]);
 
   useEffect(() => {
     if (open) {
-      fetch("/api/categories?status=Active&limit=100")
-        .then((r) => r.json())
-        .then((json) => {
-          if (json.data) setCategories(json.data);
-        })
-        .catch(() => {});
+      Promise.all([
+        fetch("/api/categories?status=Active&limit=100").then((r) => r.json()),
+        fetch("/api/gst-types?status=Active&limit=100").then((r) => r.json()),
+      ]).then(([catJson, gstJson]) => {
+        if (catJson.data) setCategories(catJson.data);
+        if (gstJson.data) setGstTypes(gstJson.data);
+      }).catch(() => {});
     }
   }, [open]);
 
@@ -54,8 +63,13 @@ export function ProductSearchModal({
     label: c.name,
   }));
 
+  const gstTypeOptions = gstTypes.map((g) => ({
+    value: String(g.id),
+    label: `${g.code} — ${g.name}`,
+  }));
+
   const handleSearch = () => {
-    onSearch(searchTerm, statusFilter, categoryFilter);
+    onSearch(searchTerm, statusFilter, categoryFilter, gstTypeFilter);
     onOpenChange(false);
   };
 
@@ -63,7 +77,8 @@ export function ProductSearchModal({
     setSearchTerm("");
     setStatusFilter("all");
     setCategoryFilter("all");
-    onSearch("", "all", "all");
+    setGstTypeFilter("all");
+    onSearch("", "all", "all", "all");
     onOpenChange(false);
   };
 
@@ -108,6 +123,20 @@ export function ProductSearchModal({
               value={categoryFilter}
               onValueChange={setCategoryFilter}
               placeholder="Select category"
+              allOption
+              allLabel="All"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-[#333]">
+              GST Type
+            </Label>
+            <SearchableSelect
+              options={gstTypeOptions}
+              value={gstTypeFilter}
+              onValueChange={setGstTypeFilter}
+              placeholder="Select GST type"
               allOption
               allLabel="All"
             />

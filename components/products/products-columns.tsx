@@ -16,6 +16,9 @@ export interface Product {
   stock: string;
   lastCost: string;
   avgCost: string;
+  sellingPrice: string;
+  gstTypeId: number;
+  gstTypeName: string | null;
   status: "Active" | "Deleted";
   createdAt: Date;
   updatedAt: Date | null;
@@ -91,6 +94,30 @@ export function getColumns({ onView, onEdit, onDelete, onRestore, timezone }: Co
       header: "Brand",
       cell: ({ row }) => (
         <span>{row.original.brand || "-"}</span>
+      ),
+    },
+    {
+      accessorKey: "gstTypeName",
+      header: "GST Type",
+      cell: ({ row }) => (
+        <span>{row.original.gstTypeName || "-"}</span>
+      ),
+    },
+    {
+      accessorKey: "sellingPrice",
+      header: ({ column }) => {
+        return (
+          <button
+            className="flex items-center gap-1 text-xs font-semibold uppercase text-[#666] hover:text-[#337ab7]"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Selling Price
+            <ArrowUpDown className="h-3 w-3" />
+          </button>
+        );
+      },
+      cell: ({ row }) => (
+        <span>{Number(row.original.sellingPrice).toFixed(4)}</span>
       ),
     },
     {

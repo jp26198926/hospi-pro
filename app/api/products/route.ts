@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { products, categories } from "@/lib/db/schema";
+import { products, categories, gstTypes } from "@/lib/db/schema";
 import { productSchema } from "@/lib/validations/product";
 import { eq, desc, asc, ilike, and, ne, or, sql, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const status = searchParams.get("status") || "all";
     const categoryId = searchParams.get("categoryId") || "";
+    const gstTypeId = searchParams.get("gstTypeId") || "";
 
     const conditions = [];
     if (status === "Active") {
@@ -27,6 +28,9 @@ export async function GET(request: NextRequest) {
     }
     if (categoryId && categoryId !== "all") {
       conditions.push(eq(products.categoryId, parseInt(categoryId)));
+    }
+    if (gstTypeId && gstTypeId !== "all") {
+      conditions.push(eq(products.gstTypeId, parseInt(gstTypeId)));
     }
     if (search) {
       conditions.push(
@@ -71,6 +75,9 @@ export async function GET(request: NextRequest) {
           stock: products.stock,
           lastCost: products.lastCost,
           avgCost: products.avgCost,
+          sellingPrice: products.sellingPrice,
+          gstTypeId: products.gstTypeId,
+          gstTypeName: gstTypes.name,
           status: products.status,
           createdAt: products.createdAt,
           updatedAt: products.updatedAt,
@@ -82,6 +89,7 @@ export async function GET(request: NextRequest) {
         })
         .from(products)
         .leftJoin(categories, eq(products.categoryId, categories.id))
+        .leftJoin(gstTypes, eq(products.gstTypeId, gstTypes.id))
         .where(where)
         .orderBy(orderFn(sortColumn))
         .limit(limit)
@@ -137,6 +145,8 @@ export async function POST(request: NextRequest) {
         stock: parsed.data.stock?.toString() || "0",
         lastCost: parsed.data.lastCost?.toString() || "0",
         avgCost: parsed.data.avgCost?.toString() || "0",
+        sellingPrice: parsed.data.sellingPrice?.toString() || "0",
+        gstTypeId: parsed.data.gstTypeId,
         createdBy: auth.userId,
       })
       .returning();

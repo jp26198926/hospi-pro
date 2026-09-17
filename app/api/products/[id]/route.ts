@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { products, categories } from "@/lib/db/schema";
+import { products, categories, gstTypes } from "@/lib/db/schema";
 import { productSchema } from "@/lib/validations/product";
 import { eq, ne, and } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
@@ -33,6 +33,9 @@ export async function GET(
         stock: products.stock,
         lastCost: products.lastCost,
         avgCost: products.avgCost,
+        sellingPrice: products.sellingPrice,
+        gstTypeId: products.gstTypeId,
+        gstTypeName: gstTypes.name,
         status: products.status,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
@@ -44,6 +47,7 @@ export async function GET(
       })
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
+      .leftJoin(gstTypes, eq(products.gstTypeId, gstTypes.id))
       .where(and(eq(products.id, productId), ne(products.status, "Deleted")));
 
     if (!data) {
@@ -114,6 +118,8 @@ export async function PUT(
         stock: parsed.data.stock?.toString() || "0",
         lastCost: parsed.data.lastCost?.toString() || "0",
         avgCost: parsed.data.avgCost?.toString() || "0",
+        sellingPrice: parsed.data.sellingPrice?.toString() || "0",
+        gstTypeId: parsed.data.gstTypeId,
         updatedAt: new Date(),
         updatedBy: auth.userId,
       })

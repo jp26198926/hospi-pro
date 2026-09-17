@@ -9,6 +9,8 @@ export const productSchema = z.object({
   stock: z.number().min(0).optional(),
   lastCost: z.number().min(0).optional(),
   avgCost: z.number().min(0).optional(),
+  sellingPrice: z.number().min(0).optional(),
+  gstTypeId: z.number().int().positive("GST type is required"),
 });
 
 export const productUpdateSchema = z.object({
@@ -20,6 +22,8 @@ export const productUpdateSchema = z.object({
   stock: z.number().min(0).optional(),
   lastCost: z.number().min(0).optional(),
   avgCost: z.number().min(0).optional(),
+  sellingPrice: z.number().min(0).optional(),
+  gstTypeId: z.number().int().positive("GST type is required"),
   status: z.enum(["Active", "Deleted"]).optional(),
 });
 
