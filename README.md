@@ -77,6 +77,7 @@ app/
 ├── (admin)/              # Protected admin pages (with sidebar layout)
 │   ├── categories/
 │   ├── departments/
+│   ├── gst-types/
 │   ├── locations/
 │   ├── pages/
 │   ├── permissions/
@@ -98,6 +99,7 @@ app/
 │   ├── categories/
 │   ├── currencies/       # Currency lookup (auth-only)
 │   ├── departments/
+│   ├── gst-types/
 │   ├── locations/
 │   ├── pages/
 │   ├── permissions/
@@ -119,6 +121,7 @@ components/
 ├── auth/                 # Login form, change password modal, profile modal
 ├── categories/
 ├── departments/
+├── gst-types/
 ├── layout/               # Sidebar, navbar, breadcrumb
 ├── locations/
 ├── pages/
@@ -149,6 +152,7 @@ lib/
     ├── auth.ts
     ├── category.ts
     ├── department.ts
+    ├── gst-type.ts
     ├── location.ts
     ├── page.ts
     ├── permission.ts

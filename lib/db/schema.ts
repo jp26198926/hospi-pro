@@ -80,6 +80,20 @@ export const products = pgTable("products", {
   deletedReason: text("deleted_reason"),
 });
 
+export const gstTypes = pgTable("gst_types", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull().unique(),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
+  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
+  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
   role: text("role").notNull().unique(),
