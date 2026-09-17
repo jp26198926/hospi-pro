@@ -45,11 +45,16 @@ export const categories = pgTable("categories", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
+  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
+  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
 });
 ```
 
 - Column DB names are snake_case; TS property names are camelCase.
 - Always include the soft-delete trio: `status`, `createdAt`, `updatedAt`, `deletedAt`.
+- **Always include audit fields**: `createdBy`, `updatedBy`, `deletedBy` (FKs to `users.id`), `deletedReason` (text).
 - **All timestamps must use** `timestamp("...", { withTimezone: true, mode: "date" })` — this stores `timestamptz` and avoids double-offset bugs.
 - Reuse `commonStatusEnum` — do not create a new enum.
 
@@ -127,9 +132,9 @@ The `pagePath` argument must match the `path` column in the `pages` table (e.g. 
 **POST** — create:
 - Validate with `categorySchema.safeParse(body)` → 400 on failure.
 - Uniqueness check: `and(eq(categories.category, value), ne(categories.status, "Deleted"))` → 409 if exists.
-- Insert `.returning()` → `Response.json({ data }, { status: 201 })`.
+- Insert with `createdBy: auth.userId` → `Response.json({ data }, { status: 201 })`.
 
-Copy `app/api/departments/route.ts` as the template.
+Copy `app/api/departments/route.ts` or `app/api/suppliers/route.ts` as the template.
 
 ---
 
@@ -160,11 +165,11 @@ if (isNaN(categoryId)) return Response.json({ error: "Invalid ID" }, { status: 4
 | Method | Behavior | Response |
 |---|---|---|
 | `GET` | Find by id + `ne(status, "Deleted")`; 404 if missing | `{ data }` |
-| `PUT` | Validate with create schema; uniqueness excluding self + Deleted; set `updatedAt: new Date()` | `{ data }` |
-| `DELETE` | Soft delete: `{ status: "Deleted", deletedAt: new Date() }` | `{ message }` |
-| `PATCH` | Restore: find only `eq(status, "Deleted")` rows; set `{ status: "Active", deletedAt: null, updatedAt: new Date() }` | `{ data }` |
+| `PUT` | Validate with create schema; uniqueness excluding self + Deleted; set `updatedAt: new Date(), updatedBy: auth.userId` | `{ data }` |
+| `DELETE` | Soft delete: `{ status: "Deleted", deletedAt: new Date(), deletedBy: auth.userId, deletedReason: body.reason \|\| null }`. Accepts optional JSON body `{ reason }`. | `{ message }` |
+| `PATCH` | Restore: find only `eq(status, "Deleted")` rows; set `{ status: "Active", deletedAt: null, deletedBy: null, deletedReason: null, updatedAt: new Date(), updatedBy: auth.userId }` | `{ data }` |
 
-Copy `app/api/departments/[id]/route.ts` as the template.
+Copy `app/api/suppliers/[id]/route.ts` as the template (includes audit fields).
 
 ---
 
@@ -328,15 +333,15 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 
 ## Checklist
 
-- [ ] `lib/db/schema.ts` — add table (timestamps with `withTimezone: true`)
+- [ ] `lib/db/schema.ts` — add table (timestamps with `withTimezone: true` + audit fields)
 - [ ] `npm run db:push`
 - [ ] `lib/validations/<singular>.ts` — create
-- [ ] `app/api/<plural>/route.ts` — GET (requirePermission Read) + POST (requirePermission Add)
-- [ ] `app/api/<plural>/[id]/route.ts` — GET (Read) + PUT (Edit) + DELETE (Delete) + PATCH (Restore)
+- [ ] `app/api/<plural>/route.ts` — GET (requirePermission Read) + POST (requirePermission Add, set `createdBy: auth.userId`)
+- [ ] `app/api/<plural>/[id]/route.ts` — GET (Read) + PUT (Edit, set `updatedBy`) + DELETE (Delete, set `deletedBy`/`deletedReason`) + PATCH (Restore, clear audit fields)
 - [ ] `components/<plural>/<plural>-columns.tsx`
 - [ ] `components/<plural>/<plural>-table.tsx` (accepts `timezone` prop if showing dates)
 - [ ] `components/<plural>/<singular>-form-modal.tsx`
-- [ ] `components/<plural>/<singular>-delete-modal.tsx`
+- [ ] `components/<plural>/<singular>-delete-modal.tsx` (with optional reason input)
 - [ ] `components/<plural>/<singular>-search-modal.tsx`
 - [ ] `app/(admin)/<plural>/layout.tsx`
 - [ ] `app/(admin)/<plural>/page.tsx` (with `requirePageRead` guard + timezone prop)
@@ -350,6 +355,7 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 ## Gotchas
 
 - **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
+- **Audit fields**: all modules must include `createdBy`, `updatedBy`, `deletedBy`, `deletedReason`. Set them from `auth.userId` returned by `requirePermission`. DELETE accepts optional `{ reason }` body. PATCH restore clears `deletedBy` and `deletedReason`.
 - **Restore is inline PATCH** from the table action buttons — there is no restore modal component.
 - **PUT uses the create schema** (`<singular>Schema`), not the update schema. Status is never sent from forms.
 - **`params` is a Promise** in Next.js 16 — always `await params` in pages and route handlers.

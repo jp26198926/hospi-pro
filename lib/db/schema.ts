@@ -43,6 +43,22 @@ export const uoms = pgTable("uoms", {
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
 });
 
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  contactPerson: text("contact_person"),
+  phone: text("phone"),
+  email: text("email"),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
+  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
+  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
   role: text("role").notNull().unique(),

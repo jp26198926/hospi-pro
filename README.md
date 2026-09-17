@@ -85,6 +85,7 @@ app/
 │   ├── settings-cloudinary/
 │   ├── settings-mail/
 │   ├── settings-sms/
+│   ├── suppliers/
 │   ├── uoms/
 │   └── users/
 ├── (auth)/               # Public auth pages
@@ -105,6 +106,7 @@ app/
 │   ├── settings-cloudinary/
 │   ├── settings-mail/
 │   ├── settings-sms/
+│   ├── suppliers/
 │   ├── timezones/
 │   ├── uoms/
 │   ├── upload/
@@ -125,6 +127,7 @@ components/
 ├── settings-cloudinary/
 ├── settings-mail/
 ├── settings-sms/
+├── suppliers/
 ├── ui/                   # Reusable UI components (button, input, dialog, table, etc.)
 ├── uoms/
 └── users/
@@ -152,6 +155,7 @@ lib/
     ├── settings-cloudinary.ts
     ├── settings-mail.ts
     ├── settings-sms.ts
+    ├── supplier.ts
     ├── uom.ts
     └── user.ts
 proxy.ts                  # Next.js 16 middleware (auth gate)
@@ -178,6 +182,19 @@ Permissions are enforced at three levels:
 | API routes | `requirePermission(request, "/path", "Permission")` → 401/403 | Read/Add/Edit/Delete/Restore/Export/Clone |
 
 Permission data lives in `role_permissions` (roleId, pageId, permissionId). Cached 30s per role in `lib/permissions.ts`. Cache invalidated on role-permission mutations.
+
+### Audit Fields
+
+All soft-deletable module tables track who did what:
+
+| Field | Type | Set on |
+|---|---|---|
+| `createdBy` | FK → users.id | POST (from logged-in user) |
+| `updatedBy` | FK → users.id | PUT and PATCH restore |
+| `deletedBy` | FK → users.id | DELETE (cleared on restore) |
+| `deletedReason` | text | DELETE from optional `{ reason }` body (cleared on restore) |
+
+The `requirePermission()` helper returns `AuthUser` with `userId` — API routes use `auth.userId` to populate these fields.
 
 ### Route Groups
 

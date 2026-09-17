@@ -64,13 +64,19 @@ All `db:*` scripts use `dotenv-cli` with `-e .env.local` — they load env autom
 All soft-deletable tables share `commonStatusEnum` (`status_common`: Active/Deleted) plus:
 
 ```
-status    commonStatusEnum  notNull  default "Active"
-createdAt timestamp("...", { withTimezone: true, mode: "date" })  defaultNow  notNull
-updatedAt timestamp("...", { withTimezone: true, mode: "date" })  nullable    set on PUT only
-deletedAt timestamp("...", { withTimezone: true, mode: "date" })  nullable    set on DELETE, cleared on PATCH restore
+status         commonStatusEnum  notNull  default "Active"
+createdAt      timestamp("...", { withTimezone: true, mode: "date" })  defaultNow  notNull
+updatedAt      timestamp("...", { withTimezone: true, mode: "date" })  nullable    set on PUT only
+deletedAt      timestamp("...", { withTimezone: true, mode: "date" })  nullable    set on DELETE, cleared on PATCH restore
+createdBy      integer  FK → users.id  nullable  set to auth.userId on POST
+updatedBy      integer  FK → users.id  nullable  set to auth.userId on PUT
+deletedBy      integer  FK → users.id  nullable  set to auth.userId on DELETE, cleared on PATCH restore
+deletedReason  text                  nullable  set on DELETE from optional request body { reason }, cleared on PATCH restore
 ```
 
-Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
+**Audit fields**: `requirePermission()` returns `AuthUser` with `userId` — use it to set `createdBy`/`updatedBy`/`deletedBy`. DELETE accepts optional JSON body `{ reason: string }` to populate `deletedReason`. PATCH (restore) must clear `deletedBy`, `deletedReason`, and set `updatedBy`.
+
+Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `suppliers`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
 
 **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
 
