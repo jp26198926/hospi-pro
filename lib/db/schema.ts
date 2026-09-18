@@ -71,6 +71,19 @@ export const paymentTerms = pgTable("payment_terms", {
   deletedReason: text("deleted_reason"),
 });
 
+export const transTypes = pgTable("trans_types", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  name: text("name").notNull().unique(),
+  status: commonStatusEnum("status").notNull().default("Active"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
 export const suppliers = pgTable("suppliers", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   name: text("name").notNull().unique(),

@@ -78,7 +78,7 @@ deletedReason  text                  nullable  set on DELETE from optional reque
 
 **Schema conventions**: All table IDs use `bigserial("id", { mode: "number" }).primaryKey()` and all FK columns use `bigint("col", { mode: "number" }).references(...)` — the `mode: "number"` ensures Drizzle returns JS `number` (not BigInt). Non-FK numeric columns (e.g. `pages.order`, `settingsMail.smtpPort`) stay as `integer`.
 
-Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `payment_methods`, `payment_terms`, `suppliers`, `products`, `gst_types`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
+Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `payment_methods`, `payment_terms`, `trans_types`, `suppliers`, `products`, `gst_types`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
 
 **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
 

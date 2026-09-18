@@ -13,6 +13,7 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - UOM (Units of Measure) management
 - Payment Methods management (unique name + unique description, soft delete + restore)
 - Payment Terms management (unique name + term days, default 0)
+- Trans Type management (unique name, transaction type lookup)
 - GST Types management
 - Suppliers management (with audit trail)
 - Products management (editable product codes with optional next-code prefill, required UOM + GST type FKs, optional category, stock/cost tracking)
