@@ -2,7 +2,7 @@
 
 How to add a new CRUD module to this RBAC app. Follow the steps in order.
 
-**Reference modules**: `departments` (simple), `roles` (has clone modal + detail page with a child table).
+**Reference modules**: `departments` (simple), `roles` (has clone modal + detail page with a child table), `products` (wide table, required FKs `uomId`/`gstTypeId`, editable unique code + next-code prefill, Created At omitted).
 
 ---
 
@@ -135,6 +135,19 @@ The `pagePath` argument must match the `path` column in the `pages` table (e.g. 
 - Validate with `categorySchema.safeParse(body)` → 400 on failure.
 - Uniqueness check: `and(eq(categories.category, value), ne(categories.status, "Deleted"))` → 409 if exists.
 - Insert with `createdBy: auth.userId` → `Response.json({ data }, { status: 201 })`.
+
+**User-editable unique codes** (if the domain has a code — see products/UOM):
+- Zod: `z.string().trim().min(1, "Code is required").max(50, "Code must be at most 50 characters")` (adjust max to the module).
+- POST uniqueness: `eq(table.code, value)` + `ne(status, "Deleted")` → 409.
+- PUT uniqueness: same + `ne(table.id, selfId)`.
+- Optional form prefill: `GET /api/<plural>/next-code` with `requirePermission(..., "/<parent>", "Read")` — **never** add helper routes to `PUBLIC_API_ROUTES`.
+
+**Required FK columns** (if any — see products `uomId`/`gstTypeId`):
+- Schema: `bigint("col_id", { mode: "number" }).notNull().references(() => other.id)`.
+- Zod: `z.number().int().positive("X is required")`.
+- Form: required `SearchableSelect` (no `allOption`; empty → `0` so validation fails).
+- List/detail APIs: `leftJoin` + select `otherName: other.name`; include id + name on the list payload for the table/edit form.
+- Grants: roles that open this module need **Read** on the FK module’s page path so form lookups succeed.
 
 Copy `app/api/departments/route.ts` or `app/api/suppliers/route.ts` as the template.
 
@@ -332,18 +345,21 @@ Available icon keys (mapped in `components/layout/sidebar.tsx`):
 
 If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROUTES` in `proxy.ts`. Most modules do not need this.
 
+**Do not** put module helper/prefill routes (e.g. `next-code`) in `PUBLIC_API_ROUTES` — they stay behind `requirePermission` on the parent page path.
+
 ---
 
 ## Checklist
 
-- [ ] `lib/db/schema.ts` — add table (timestamps with `withTimezone: true` + audit fields)
+- [ ] `lib/db/schema.ts` — add table (timestamps with `withTimezone: true` + audit fields); required FKs use `bigint(...).notNull().references(...)`
 - [ ] `npm run db:push`
-- [ ] `lib/validations/<singular>.ts` — create
-- [ ] `app/api/<plural>/route.ts` — GET (requirePermission Read) + POST (requirePermission Add, set `createdBy: auth.userId`)
+- [ ] `lib/validations/<singular>.ts` — create; include `code` max length if user-editable; required FKs as `int().positive(...)`
+- [ ] `app/api/<plural>/route.ts` — GET (requirePermission Read) + POST (requirePermission Add, set `createdBy: auth.userId`); unique code/FK handling as needed
 - [ ] `app/api/<plural>/[id]/route.ts` — GET (Read) + PUT (Edit, set `updatedBy`) + DELETE (Delete, set `deletedBy`/`deletedReason`) + PATCH (Restore, clear audit fields)
-- [ ] `components/<plural>/<plural>-columns.tsx` — apply Created At rule: if data columns (excluding `#` and Actions) > 5, omit `createdAt` column
+- [ ] Optional helper e.g. `app/api/<plural>/next-code/route.ts` — parent `requirePermission` only; not in `PUBLIC_API_ROUTES`
+- [ ] `components/<plural>/<plural>-columns.tsx` — apply Created At rule: if data columns (excluding `#` and Actions) > 5, omit `createdAt` column; join/display FK `*Name` columns as needed
 - [ ] `components/<plural>/<plural>-table.tsx` (accepts `timezone` prop if showing dates)
-- [ ] `components/<plural>/<singular>-form-modal.tsx`
+- [ ] `components/<plural>/<singular>-form-modal.tsx` — SearchableSelect for FKs; required FKs without `allOption`
 - [ ] `components/<plural>/<singular>-delete-modal.tsx` (with optional reason input)
 - [ ] `components/<plural>/<singular>-search-modal.tsx`
 - [ ] `app/(admin)/<plural>/layout.tsx`
@@ -351,6 +367,7 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 - [ ] Optional: `app/(admin)/<plural>/[id]/page.tsx` (with `requirePageRead` + `formatDateTimeLong`)
 - [ ] Insert row into `pages` table for sidebar
 - [ ] Grant View on parent page + View/Read on new page for roles that need access
+- [ ] Grant **Read** on FK lookup pages (e.g. `/uoms`) for roles that open this module’s forms
 - [ ] `npm run lint` + `npx tsc --noEmit`
 
 ---
@@ -365,7 +382,9 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 - **All timestamps** must use `timestamp("...", { withTimezone: true, mode: "date" })` — bare `timestamp()` causes double timezone offset bugs.
 - **Permission checks**: every API handler needs `requirePermission`; every page needs `requirePageRead`. Use the `pages` table `path` as the pagePath argument.
 - **`lib/datetime.ts` must stay pure** (no db/server imports) — client components import from it.
-- **FK dropdowns**: use `SearchableSelect` (`components/ui/searchable-select.tsx`), not base-ui `Select`. Use base-ui `Select` only for simple non-ID values (e.g. status All/Active/Deleted).
+- **FK dropdowns**: use `SearchableSelect` (`components/ui/searchable-select.tsx`), not base-ui `Select`. Use base-ui `Select` only for simple non-ID values (e.g. status All/Active/Deleted). Required FKs: no `allOption`; empty value → `0` so zod `.positive()` fails.
+- **FK form lookups**: forms fetch FK list APIs — grant role **Read** on those page paths (products needs `/categories`, `/gst-types`, `/uoms`) or dropdowns stay empty.
+- **Unique user-editable codes**: validate max length; POST/PUT uniqueness excluding Deleted (PUT also excludes self). Helper prefill endpoints stay authenticated under the parent page path — not in `PUBLIC_API_ROUTES`.
 - **Toast**: `import { toast } from "sonner"` — not from `components/ui/sonner`.
 - **Mobile**: table `hidden md:block`, cards `md:hidden`. All modals must trigger from both layouts.
 - **Exports**: include the status column in both PDF and Excel.

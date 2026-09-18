@@ -84,7 +84,7 @@ Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`,
 
 ## CRUD module pattern
 
-Follow the Departments/Roles module end-to-end. Full step-by-step guide with naming conventions and checklist: `MODULE_CREATION.md`.
+Follow the Departments/Roles module end-to-end. Full step-by-step guide with naming conventions and checklist: `MODULE_CREATION.md`. For required FKs, join display names, editable unique codes, and wide-table Created At omission, use **products** as the reference module.
 
 File layout for a new module `<name>`:
 
@@ -97,7 +97,7 @@ app/(admin)/<name>/page.tsx      — index page
 components/<name>/               — table, form modal, delete modal, columns
 ```
 
-Register in sidebar by inserting into `pages`. Available icon keys are listed in `README.md`.
+Register in sidebar by inserting into `pages`. Available icon keys are listed in `MODULE_CREATION.md` (Step 7) and mapped in `components/layout/sidebar.tsx`.
 
 ### API conventions
 
@@ -105,6 +105,7 @@ Register in sidebar by inserting into `pages`. Available icon keys are listed in
 - Single success: `{ data: T }`. Errors: `{ error: string }` with HTTP status. Always `Response.json(...)`.
 - List queries use `ilike` for search, `Promise.all` for data + count.
 - **Permission checks**: every handler must call `requirePermission(request, "/<path>", "<Permission>")` as first line inside `try`. The `pagePath` argument must match the `path` column in the `pages` table (e.g. `"/categories"`). Exception: lookup endpoints (currencies, timezones, upload) use `requireAuth` only; settings-application GET uses `requireAuth` (brand info needed by login page).
+- **Module helper routes** (e.g. `GET /api/products/next-code` for form prefill) use `requirePermission` with the **parent** pagePath (`/products`) — do **not** add them to `PUBLIC_API_ROUTES`.
 
 ## Next.js 16 gotchas
 
@@ -142,3 +143,4 @@ Hardcoded hex colors, not Tailwind theme tokens — match these exactly:
 - Sidebar parent pages need a View grant for children to appear (child won't render without its parent group).
 - `accessToken` cookie is set on login and cleared on logout — required for SSR page guards to read roleId.
 - Permission cache (`lib/permissions.ts`) invalidates on role-permission mutations — call `invalidatePermissionCache(roleId)` after POST/DELETE on role-permissions or roles/clone.
+- **FK form lookups**: form/search modals fetch list APIs (for products: `/api/categories`, `/api/gst-types`, `/api/uoms`). Roles that can open the parent module still need **Read** on those FK pages or dropdowns render empty.

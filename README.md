@@ -13,7 +13,7 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - UOM (Units of Measure) management
 - GST Types management
 - Suppliers management (with audit trail)
-- Products management (editable product codes, category/GST type FKs, stock/cost tracking)
+- Products management (editable product codes with optional next-code prefill, required UOM + GST type FKs, optional category, stock/cost tracking)
 - Multi-currency support (155 ISO 4217 currencies)
 - Timezone-aware date display (configurable per app)
 - File upload with configurable storage (File System / Cloudinary)
