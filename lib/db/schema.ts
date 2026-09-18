@@ -1,11 +1,11 @@
-import { pgTable, serial, text, timestamp, pgEnum, integer, decimal, AnyPgColumn, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, bigserial, bigint, text, timestamp, pgEnum, integer, decimal, AnyPgColumn, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const commonStatusEnum = pgEnum("status_common", ["Active", "Deleted"]);
 
 export const categoryTypeEnum = pgEnum("category_type", ["inventoriable", "consumable"]);
 
 export const departments = pgTable("departments", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   department: text("department").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
@@ -14,7 +14,7 @@ export const departments = pgTable("departments", {
 });
 
 export const categories = pgTable("categories", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   name: text("name").notNull().unique(),
   type: categoryTypeEnum("type").notNull(),
   description: text("description"),
@@ -25,7 +25,7 @@ export const categories = pgTable("categories", {
 });
 
 export const locations = pgTable("locations", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   name: text("name").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
@@ -34,7 +34,7 @@ export const locations = pgTable("locations", {
 });
 
 export const uoms = pgTable("uoms", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   code: text("code").notNull().unique(),
   name: text("name").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
@@ -44,7 +44,7 @@ export const uoms = pgTable("uoms", {
 });
 
 export const suppliers = pgTable("suppliers", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   name: text("name").notNull().unique(),
   contactPerson: text("contact_person"),
   phone: text("phone"),
@@ -53,17 +53,17 @@ export const suppliers = pgTable("suppliers", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
-  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
-  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
-  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
   deletedReason: text("deleted_reason"),
 });
 
 export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   code: text("code").notNull().unique(),
   name: text("name").notNull().unique(),
-  categoryId: integer("category_id").references(() => categories.id),
+  categoryId: bigint("category_id", { mode: "number" }).references(() => categories.id),
   brand: text("brand"),
   model: text("model"),
   minStock: decimal("min_stock", { precision: 10, scale: 4 }).notNull().default("0"),
@@ -71,33 +71,34 @@ export const products = pgTable("products", {
   lastCost: decimal("last_cost", { precision: 10, scale: 4 }).notNull().default("0"),
   avgCost: decimal("avg_cost", { precision: 10, scale: 4 }).notNull().default("0"),
   sellingPrice: decimal("selling_price", { precision: 10, scale: 4 }).notNull().default("0"),
-  gstTypeId: integer("gst_type_id").notNull().references((): AnyPgColumn => gstTypes.id),
+  gstTypeId: bigint("gst_type_id", { mode: "number" }).notNull().references((): AnyPgColumn => gstTypes.id),
+  uomId: bigint("uom_id", { mode: "number" }).notNull().references((): AnyPgColumn => uoms.id),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
-  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
-  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
-  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
   deletedReason: text("deleted_reason"),
 });
 
 export const gstTypes = pgTable("gst_types", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   code: text("code").notNull().unique(),
   name: text("name").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
-  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
-  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
-  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
   deletedReason: text("deleted_reason"),
 });
 
 export const roles = pgTable("roles", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   role: text("role").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
@@ -106,28 +107,28 @@ export const roles = pgTable("roles", {
 });
 
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firstname: text("firstname").notNull(),
   lastname: text("lastname").notNull(),
-  departmentId: integer("department_id").references(() => departments.id),
-  roleId: integer("role_id").references(() => roles.id),
+  departmentId: bigint("department_id", { mode: "number" }).references(() => departments.id),
+  roleId: bigint("role_id", { mode: "number" }).references(() => roles.id),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
-  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
-  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
-  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
 });
 
 export const pages = pgTable("pages", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   page: text("page").notNull(),
   path: text("path").notNull(),
   icon: text("icon"),
-  parentId: integer("parent_id").references((): AnyPgColumn => pages.id),
+  parentId: bigint("parent_id", { mode: "number" }).references((): AnyPgColumn => pages.id),
   order: integer("order"),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
@@ -136,7 +137,7 @@ export const pages = pgTable("pages", {
 });
 
 export const permissions = pgTable("permissions", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   permission: text("permission").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
@@ -145,31 +146,31 @@ export const permissions = pgTable("permissions", {
 });
 
 export const rolePermissions = pgTable("role_permissions", {
-  id: serial("id").primaryKey(),
-  roleId: integer("role_id").notNull().references(() => roles.id),
-  pageId: integer("page_id").notNull().references(() => pages.id),
-  permissionId: integer("permission_id").notNull().references(() => permissions.id),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  roleId: bigint("role_id", { mode: "number" }).notNull().references(() => roles.id),
+  pageId: bigint("page_id", { mode: "number" }).notNull().references(() => pages.id),
+  permissionId: bigint("permission_id", { mode: "number" }).notNull().references(() => permissions.id),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
 }, (t) => [
   uniqueIndex("role_page_permission_idx").on(t.roleId, t.pageId, t.permissionId),
 ]);
 
 export const timezones = pgTable("timezones", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   timezone: text("timezone").notNull().unique(),
   utcOffset: text("utc_offset"),
   abbreviation: text("abbreviation"),
 });
 
 export const currencies = pgTable("currencies", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
   symbol: text("symbol"),
 });
 
 export const settingsApp = pgTable("settings_app", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   appLogo: text("app_logo"),
   appFavicon: text("app_favicon"),
   appName: text("app_name").notNull().default("RBAC System"),
@@ -178,8 +179,8 @@ export const settingsApp = pgTable("settings_app", {
   phone: text("phone"),
   address: text("address"),
   tinNo: text("tin_no"),
-  timezoneId: integer("timezone_id").references(() => timezones.id),
-  currencyId: integer("currency_id").references(() => currencies.id),
+  timezoneId: bigint("timezone_id", { mode: "number" }).references(() => timezones.id),
+  currencyId: bigint("currency_id", { mode: "number" }).references(() => currencies.id),
   otpDuration: integer("otp_duration"),
   primaryStorage: text("primary_storage").notNull().default("filesystem"),
   downloadLinkAndroid: text("download_link_android"),
@@ -188,7 +189,7 @@ export const settingsApp = pgTable("settings_app", {
 });
 
 export const settingsMail = pgTable("settings_mail", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   smtpHost: text("smtp_host"),
   smtpPort: integer("smtp_port"),
   smtpUsername: text("smtp_username"),
@@ -200,14 +201,14 @@ export const settingsMail = pgTable("settings_mail", {
 });
 
 export const settingsSms = pgTable("settings_sms", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   textbeeApiKey: text("textbee_api_key"),
   textbeeDeviceId: text("textbee_device_id"),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
 });
 
 export const settingsCloudinary = pgTable("settings_cloudinary", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   cloudinaryName: text("cloudinary_name"),
   cloudinaryApiKey: text("cloudinary_api_key"),
   cloudinaryApiSecret: text("cloudinary_api_secret"),
@@ -215,8 +216,8 @@ export const settingsCloudinary = pgTable("settings_cloudinary", {
 });
 
 export const refreshTokens = pgTable("refresh_tokens", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  userId: bigint("user_id", { mode: "number" }).notNull().references(() => users.id),
   token: text("token").notNull().unique(),
   expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),

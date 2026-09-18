@@ -28,10 +28,22 @@ interface GstTypeOption {
   name: string;
 }
 
+interface UomOption {
+  id: number;
+  code: string;
+  name: string;
+}
+
 interface ProductSearchModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSearch: (term: string, status: string, categoryId: string, gstTypeId: string) => void;
+  onSearch: (
+    term: string,
+    status: string,
+    categoryId: string,
+    gstTypeId: string,
+    uomId: string
+  ) => void;
 }
 
 export function ProductSearchModal({
@@ -43,17 +55,21 @@ export function ProductSearchModal({
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [gstTypeFilter, setGstTypeFilter] = useState("all");
+  const [uomFilter, setUomFilter] = useState("all");
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [gstTypes, setGstTypes] = useState<GstTypeOption[]>([]);
+  const [uoms, setUoms] = useState<UomOption[]>([]);
 
   useEffect(() => {
     if (open) {
       Promise.all([
         fetch("/api/categories?status=Active&limit=100").then((r) => r.json()),
         fetch("/api/gst-types?status=Active&limit=100").then((r) => r.json()),
-      ]).then(([catJson, gstJson]) => {
+        fetch("/api/uoms?status=Active&limit=100").then((r) => r.json()),
+      ]).then(([catJson, gstJson, uomJson]) => {
         if (catJson.data) setCategories(catJson.data);
         if (gstJson.data) setGstTypes(gstJson.data);
+        if (uomJson.data) setUoms(uomJson.data);
       }).catch(() => {});
     }
   }, [open]);
@@ -68,8 +84,13 @@ export function ProductSearchModal({
     label: `${g.code} — ${g.name}`,
   }));
 
+  const uomOptions = uoms.map((u) => ({
+    value: String(u.id),
+    label: `${u.code} — ${u.name}`,
+  }));
+
   const handleSearch = () => {
-    onSearch(searchTerm, statusFilter, categoryFilter, gstTypeFilter);
+    onSearch(searchTerm, statusFilter, categoryFilter, gstTypeFilter, uomFilter);
     onOpenChange(false);
   };
 
@@ -78,7 +99,8 @@ export function ProductSearchModal({
     setStatusFilter("all");
     setCategoryFilter("all");
     setGstTypeFilter("all");
-    onSearch("", "all", "all", "all");
+    setUomFilter("all");
+    onSearch("", "all", "all", "all", "all");
     onOpenChange(false);
   };
 
@@ -137,6 +159,20 @@ export function ProductSearchModal({
               value={gstTypeFilter}
               onValueChange={setGstTypeFilter}
               placeholder="Select GST type"
+              allOption
+              allLabel="All"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-[#333]">
+              UOM
+            </Label>
+            <SearchableSelect
+              options={uomOptions}
+              value={uomFilter}
+              onValueChange={setUomFilter}
+              placeholder="Select UOM"
               allOption
               allLabel="All"
             />

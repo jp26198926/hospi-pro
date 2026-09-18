@@ -39,20 +39,22 @@ Using `categories` as the example module:
 
 ```ts
 export const categories = pgTable("categories", {
-  id: serial("id").primaryKey(),
+  id: bigserial("id", { mode: "number" }).primaryKey(),
   category: text("category").notNull().unique(),
   status: commonStatusEnum("status").notNull().default("Active"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
-  createdBy: integer("created_by").references((): AnyPgColumn => users.id),
-  updatedBy: integer("updated_by").references((): AnyPgColumn => users.id),
-  deletedBy: integer("deleted_by").references((): AnyPgColumn => users.id),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
   deletedReason: text("deleted_reason"),
 });
 ```
 
 - Column DB names are snake_case; TS property names are camelCase.
+- **All IDs use `bigserial("id", { mode: "number" })`** — the project is designed for large datasets.
+- **All FK columns use `bigint("col", { mode: "number" })`** — `mode: "number"` ensures Drizzle returns JS `number`.
 - Always include the soft-delete trio: `status`, `createdAt`, `updatedAt`, `deletedAt`.
 - **Always include audit fields**: `createdBy`, `updatedBy`, `deletedBy` (FKs to `users.id`), `deletedReason` (text).
 - **All timestamps must use** `timestamp("...", { withTimezone: true, mode: "date" })` — this stores `timestamptz` and avoids double-offset bugs.
@@ -210,6 +212,7 @@ export function getColumns({ onView, onEdit, onDelete, onRestore }: {
 ```
 
 Columns: `no` (#), domain field, `status` (badge), `createdAt`, `updatedAt`, `actions`.
+**Created At rule**: count data columns only (exclude `#` and `Actions`). If more than 5 data columns, omit `createdAt` from the DataTable `getColumns()`. `#` and `actions` always stay. Status and domain fields count toward the total.
 Actions: green Eye + blue Pencil + red Trash2 (Active) **or** orange RotateCcw (Deleted).
 
 **`CategoriesTable`** handles:
@@ -338,7 +341,7 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 - [ ] `lib/validations/<singular>.ts` — create
 - [ ] `app/api/<plural>/route.ts` — GET (requirePermission Read) + POST (requirePermission Add, set `createdBy: auth.userId`)
 - [ ] `app/api/<plural>/[id]/route.ts` — GET (Read) + PUT (Edit, set `updatedBy`) + DELETE (Delete, set `deletedBy`/`deletedReason`) + PATCH (Restore, clear audit fields)
-- [ ] `components/<plural>/<plural>-columns.tsx`
+- [ ] `components/<plural>/<plural>-columns.tsx` — apply Created At rule: if data columns (excluding `#` and Actions) > 5, omit `createdAt` column
 - [ ] `components/<plural>/<plural>-table.tsx` (accepts `timezone` prop if showing dates)
 - [ ] `components/<plural>/<singular>-form-modal.tsx`
 - [ ] `components/<plural>/<singular>-delete-modal.tsx` (with optional reason input)
@@ -366,3 +369,4 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 - **Toast**: `import { toast } from "sonner"` — not from `components/ui/sonner`.
 - **Mobile**: table `hidden md:block`, cards `md:hidden`. All modals must trigger from both layouts.
 - **Exports**: include the status column in both PDF and Excel.
+- **Created At column**: if more than 5 data columns (exclude `#` and Actions), omit Created At from the DataTable. Products is the wide-table reference. Existing narrow modules (roles, departments) keep Created At.

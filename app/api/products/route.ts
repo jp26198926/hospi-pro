@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { products, categories, gstTypes } from "@/lib/db/schema";
+import { products, categories, gstTypes, uoms } from "@/lib/db/schema";
 import { productSchema } from "@/lib/validations/product";
 import { eq, desc, asc, ilike, and, ne, or, sql, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || "all";
     const categoryId = searchParams.get("categoryId") || "";
     const gstTypeId = searchParams.get("gstTypeId") || "";
+    const uomId = searchParams.get("uomId") || "";
 
     const conditions = [];
     if (status === "Active") {
@@ -31,6 +32,9 @@ export async function GET(request: NextRequest) {
     }
     if (gstTypeId && gstTypeId !== "all") {
       conditions.push(eq(products.gstTypeId, parseInt(gstTypeId)));
+    }
+    if (uomId && uomId !== "all") {
+      conditions.push(eq(products.uomId, parseInt(uomId)));
     }
     if (search) {
       conditions.push(
@@ -78,6 +82,8 @@ export async function GET(request: NextRequest) {
           sellingPrice: products.sellingPrice,
           gstTypeId: products.gstTypeId,
           gstTypeName: gstTypes.name,
+          uomId: products.uomId,
+          uomName: uoms.name,
           status: products.status,
           createdAt: products.createdAt,
           updatedAt: products.updatedAt,
@@ -90,6 +96,7 @@ export async function GET(request: NextRequest) {
         .from(products)
         .leftJoin(categories, eq(products.categoryId, categories.id))
         .leftJoin(gstTypes, eq(products.gstTypeId, gstTypes.id))
+        .leftJoin(uoms, eq(products.uomId, uoms.id))
         .where(where)
         .orderBy(orderFn(sortColumn))
         .limit(limit)
@@ -118,6 +125,15 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
 
+    const [existingCode] = await db
+      .select()
+      .from(products)
+      .where(and(eq(products.code, parsed.data.code), ne(products.status, "Deleted")));
+
+    if (existingCode) {
+      return Response.json({ error: "Product code already exists" }, { status: 409 });
+    }
+
     const [existing] = await db
       .select()
       .from(products)
@@ -127,11 +143,14 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Product name already exists" }, { status: 409 });
     }
 
-    // Auto-generate code: P + max(id)+1 padded to 6 digits
-    const [maxRow] = await db
-      .select({ maxId: sql`COALESCE(MAX(id), 0)` })
-      .from(products);
-    const code = `P${String(Number(maxRow.maxId) + 1).padStart(6, "0")}`;
+    // Fallback auto-gen if code is somehow empty: P + max(id)+1 padded to 6 digits
+    let code = parsed.data.code;
+    if (!code) {
+      const [maxRow] = await db
+        .select({ maxId: sql`COALESCE(MAX(id), 0)` })
+        .from(products);
+      code = `P${String(Number(maxRow.maxId) + 1).padStart(6, "0")}`;
+    }
 
     const [data] = await db
       .insert(products)
@@ -147,6 +166,7 @@ export async function POST(request: NextRequest) {
         avgCost: parsed.data.avgCost?.toString() || "0",
         sellingPrice: parsed.data.sellingPrice?.toString() || "0",
         gstTypeId: parsed.data.gstTypeId,
+        uomId: parsed.data.uomId,
         createdBy: auth.userId,
       })
       .returning();

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { products, categories, users, gstTypes } from "@/lib/db/schema";
+import { products, categories, users, gstTypes, uoms } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
 import { formatDateTimeLong } from "@/lib/datetime";
@@ -46,6 +46,8 @@ export default async function ProductDetailPage({ params }: Props) {
       sellingPrice: products.sellingPrice,
       gstTypeId: products.gstTypeId,
       gstTypeName: gstTypes.name,
+      uomId: products.uomId,
+      uomName: uoms.name,
       status: products.status,
       createdAt: products.createdAt,
       updatedAt: products.updatedAt,
@@ -56,6 +58,7 @@ export default async function ProductDetailPage({ params }: Props) {
     .from(products)
     .leftJoin(categories, eq(products.categoryId, categories.id))
     .leftJoin(gstTypes, eq(products.gstTypeId, gstTypes.id))
+    .leftJoin(uoms, eq(products.uomId, uoms.id))
     .leftJoin(users, eq(products.createdBy, users.id))
     .where(and(eq(products.id, productId), ne(products.status, "Deleted")));
 
@@ -113,6 +116,10 @@ export default async function ProductDetailPage({ params }: Props) {
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">GST Type</dt>
               <dd className="mt-1 text-sm font-semibold text-foreground">{product.gstTypeName || "-"}</dd>
+            </div>
+            <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
+              <dt className="text-xs font-semibold uppercase text-muted-foreground">UOM</dt>
+              <dd className="mt-1 text-sm font-semibold text-foreground">{product.uomName || "-"}</dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Selling Price</dt>

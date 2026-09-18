@@ -9,11 +9,17 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Role and permission management with per-page grants
 - Dynamic sidebar navigation (driven by database, filtered by role)
 - Categories management (inventoriable / consumable)
+- Locations management
+- UOM (Units of Measure) management
+- GST Types management
+- Suppliers management (with audit trail)
+- Products management (editable product codes, category/GST type FKs, stock/cost tracking)
 - Multi-currency support (155 ISO 4217 currencies)
 - Timezone-aware date display (configurable per app)
 - File upload with configurable storage (File System / Cloudinary)
 - Application settings (logo, favicon, name, timezone, currency, storage type)
 - Password management (change password, forgot/reset flow)
+- **Audit fields** on all modules — createdBy, updatedBy, deletedBy, deletedReason
 
 ## Tech Stack
 
@@ -45,9 +51,10 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
    ```bash
    npm run db:push
    ```
-5. Seed timezone data:
+5. Seed timezone and currency data:
    ```bash
    npm run db:seed-timezones
+   npm run db:seed-currencies
    ```
 6. Start the dev server:
    ```bash
@@ -197,9 +204,9 @@ All soft-deletable module tables track who did what:
 
 | Field | Type | Set on |
 |---|---|---|
-| `createdBy` | FK → users.id | POST (from logged-in user) |
-| `updatedBy` | FK → users.id | PUT and PATCH restore |
-| `deletedBy` | FK → users.id | DELETE (cleared on restore) |
+| `createdBy` | `bigint({ mode: "number" })` FK → users.id | POST (from logged-in user) |
+| `updatedBy` | `bigint({ mode: "number" })` FK → users.id | PUT and PATCH restore |
+| `deletedBy` | `bigint({ mode: "number" })` FK → users.id | DELETE (cleared on restore) |
 | `deletedReason` | text | DELETE from optional `{ reason }` body (cleared on restore) |
 
 The `requirePermission()` helper returns `AuthUser` with `userId` — API routes use `auth.userId` to populate these fields.
@@ -230,9 +237,9 @@ The app logo, favicon, name, and storage type are all configurable from `/settin
 See **`MODULE_CREATION.md`** for the full step-by-step guide with naming conventions, code templates, and checklist.
 
 Quick overview:
-1. Add table to `lib/db/schema.ts` (use `timestamp({ withTimezone: true, mode: "date" })`)
+1. Add table to `lib/db/schema.ts` — use `bigserial("id", { mode: "number" })` for PKs, `bigint("col", { mode: "number" })` for FKs, `timestamp({ withTimezone: true, mode: "date" })` for timestamps. Include audit fields (createdBy, updatedBy, deletedBy, deletedReason).
 2. Create `lib/validations/<singular>.ts` (zod schemas)
-3. Create `app/api/<plural>/route.ts` + `[id]/route.ts` (with `requirePermission` calls)
+3. Create `app/api/<plural>/route.ts` + `[id]/route.ts` (with `requirePermission` calls, set audit fields from `auth.userId`)
 4. Create `components/<plural>/` (columns, table, form modal, delete modal, search modal)
 5. Create `app/(admin)/<plural>/page.tsx` (with `requirePageRead` guard)
 6. Insert row into `pages` table for sidebar registration

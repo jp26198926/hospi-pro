@@ -2,7 +2,6 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Eye, Pencil, Trash2, ArrowUpDown, RotateCcw } from "lucide-react";
-import { formatDateTime } from "@/lib/datetime";
 
 export interface Product {
   id: number;
@@ -19,6 +18,8 @@ export interface Product {
   sellingPrice: string;
   gstTypeId: number;
   gstTypeName: string | null;
+  uomId: number;
+  uomName: string | null;
   status: "Active" | "Deleted";
   createdAt: Date;
   updatedAt: Date | null;
@@ -34,10 +35,9 @@ interface ColumnActions {
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
   onRestore: (product: Product) => void;
-  timezone: string;
 }
 
-export function getColumns({ onView, onEdit, onDelete, onRestore, timezone }: ColumnActions): ColumnDef<Product>[] {
+export function getColumns({ onView, onEdit, onDelete, onRestore }: ColumnActions): ColumnDef<Product>[] {
   return [
     {
       accessorKey: "no",
@@ -104,6 +104,13 @@ export function getColumns({ onView, onEdit, onDelete, onRestore, timezone }: Co
       ),
     },
     {
+      accessorKey: "uomName",
+      header: "UOM",
+      cell: ({ row }) => (
+        <span>{row.original.uomName || "-"}</span>
+      ),
+    },
+    {
       accessorKey: "sellingPrice",
       header: ({ column }) => {
         return (
@@ -164,25 +171,6 @@ export function getColumns({ onView, onEdit, onDelete, onRestore, timezone }: Co
           </span>
         );
       },
-    },
-    {
-      accessorKey: "createdAt",
-      header: ({ column }) => {
-        return (
-          <button
-            className="flex items-center gap-1 text-xs font-semibold uppercase text-[#666] hover:text-[#337ab7]"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Created At
-            <ArrowUpDown className="h-3 w-3" />
-          </button>
-        );
-      },
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {formatDateTime(row.original.createdAt, timezone)}
-        </span>
-      ),
     },
     {
       id: "actions",

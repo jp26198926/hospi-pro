@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 export const productSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(1, "Code is required")
+    .max(50, "Code must be at most 50 characters"),
   name: z.string().min(1, "Product name is required").max(150),
   categoryId: z.number().int().positive().optional().nullable(),
   brand: z.string().max(100).optional().nullable(),
@@ -11,9 +16,15 @@ export const productSchema = z.object({
   avgCost: z.number().min(0).optional(),
   sellingPrice: z.number().min(0).optional(),
   gstTypeId: z.number().int().positive("GST type is required"),
+  uomId: z.number().int().positive("UOM is required"),
 });
 
 export const productUpdateSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(1, "Code is required")
+    .max(50, "Code must be at most 50 characters"),
   name: z.string().min(1, "Product name is required").max(150),
   categoryId: z.number().int().positive().optional().nullable(),
   brand: z.string().max(100).optional().nullable(),
@@ -24,6 +35,7 @@ export const productUpdateSchema = z.object({
   avgCost: z.number().min(0).optional(),
   sellingPrice: z.number().min(0).optional(),
   gstTypeId: z.number().int().positive("GST type is required"),
+  uomId: z.number().int().positive("UOM is required"),
   status: z.enum(["Active", "Deleted"]).optional(),
 });
 

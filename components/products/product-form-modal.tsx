@@ -28,6 +28,12 @@ interface GstTypeOption {
   name: string;
 }
 
+interface UomOption {
+  id: number;
+  code: string;
+  name: string;
+}
+
 interface ProductFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -45,6 +51,7 @@ export function ProductFormModal({
 }: ProductFormModalProps) {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [gstTypeOptions, setGstTypeOptions] = useState<GstTypeOption[]>([]);
+  const [uomOptions, setUomOptions] = useState<UomOption[]>([]);
 
   const {
     register,
@@ -61,9 +68,11 @@ export function ProductFormModal({
       Promise.all([
         fetch("/api/categories?status=Active&limit=100").then((r) => r.json()),
         fetch("/api/gst-types?status=Active&limit=100").then((r) => r.json()),
-      ]).then(([catJson, gstJson]) => {
+        fetch("/api/uoms?status=Active&limit=100").then((r) => r.json()),
+      ]).then(([catJson, gstJson, uomJson]) => {
         if (catJson.data) setCategories(catJson.data);
         if (gstJson.data) setGstTypeOptions(gstJson.data);
+        if (uomJson.data) setUomOptions(uomJson.data);
       }).catch(() => {});
     }
   }, [open]);
@@ -72,6 +81,7 @@ export function ProductFormModal({
     if (open) {
       if (mode === "edit" && product) {
         reset({
+          code: product.code,
           name: product.name,
           categoryId: product.categoryId,
           brand: product.brand || "",
@@ -82,9 +92,11 @@ export function ProductFormModal({
           avgCost: Number(product.avgCost),
           sellingPrice: Number(product.sellingPrice),
           gstTypeId: product.gstTypeId,
+          uomId: product.uomId,
         });
       } else {
         reset({
+          code: "",
           name: "",
           categoryId: null,
           brand: "",
@@ -95,7 +107,16 @@ export function ProductFormModal({
           avgCost: 0,
           sellingPrice: 0,
           gstTypeId: 0,
+          uomId: 0,
         });
+        fetch("/api/products/next-code")
+          .then((r) => r.json())
+          .then((json) => {
+            if (json.data?.code) {
+              reset((prev) => ({ ...prev, code: json.data.code }));
+            }
+          })
+          .catch(() => {});
       }
     }
   }, [open, mode, product, reset]);
@@ -108,6 +129,11 @@ export function ProductFormModal({
   const gstTypeSelectOptions = gstTypeOptions.map((g) => ({
     value: String(g.id),
     label: `${g.code} — ${g.name}`,
+  }));
+
+  const uomSelectOptions = uomOptions.map((u) => ({
+    value: String(u.id),
+    label: `${u.code} — ${u.name}`,
   }));
 
   const onSubmit = async (data: ProductInput) => {
@@ -155,6 +181,26 @@ export function ProductFormModal({
         {/* Body */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
           <div className="space-y-2">
+            <Label htmlFor="code" className="text-sm font-medium text-[#333]">
+              Code <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="code"
+              placeholder="Enter product code (e.g. P000001)"
+              {...register("code")}
+              className="border-[#ccc] focus:border-[#337ab7] focus:ring-[#337ab7]"
+            />
+            {errors.code && (
+              <p className="text-sm text-red-500">{errors.code.message}</p>
+            )}
+            {mode === "add" && (
+              <p className="text-xs text-muted-foreground">
+                Code is prefilled; you can change it before saving.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium text-[#333]">
               Product Name <span className="text-red-500">*</span>
             </Label>
@@ -169,24 +215,47 @@ export function ProductFormModal({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-[#333]">
-              Category
-            </Label>
-            <Controller
-              control={control}
-              name="categoryId"
-              render={({ field }) => (
-                <SearchableSelect
-                  options={categoryOptions}
-                  value={field.value ? String(field.value) : ""}
-                  onValueChange={(val) => field.onChange(val ? parseInt(val) : null)}
-                  placeholder="Select category"
-                  allOption
-                  allLabel="None"
-                />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#333]">
+                Category
+              </Label>
+              <Controller
+                control={control}
+                name="categoryId"
+                render={({ field }) => (
+                  <SearchableSelect
+                    options={categoryOptions}
+                    value={field.value ? String(field.value) : ""}
+                    onValueChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                    placeholder="Select category"
+                    allOption
+                    allLabel="None"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#333]">
+                UOM <span className="text-red-500">*</span>
+              </Label>
+              <Controller
+                control={control}
+                name="uomId"
+                render={({ field }) => (
+                  <SearchableSelect
+                    options={uomSelectOptions}
+                    value={field.value ? String(field.value) : ""}
+                    onValueChange={(val) => field.onChange(val ? parseInt(val) : 0)}
+                    placeholder="Select UOM"
+                  />
+                )}
+              />
+              {errors.uomId && (
+                <p className="text-sm text-red-500">{errors.uomId.message}</p>
               )}
-            />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -273,7 +342,7 @@ export function ProductFormModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="sellingPrice" className="text-sm font-medium text-[#333]">
                 Selling Price
@@ -288,7 +357,7 @@ export function ProductFormModal({
               />
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <Label className="text-sm font-medium text-[#333]">
                 GST Type <span className="text-red-500">*</span>
               </Label>
@@ -309,12 +378,6 @@ export function ProductFormModal({
               )}
             </div>
           </div>
-
-          {mode === "add" && (
-            <p className="text-xs text-muted-foreground">
-              Product code will be auto-generated (e.g. P000001).
-            </p>
-          )}
 
           {/* Footer */}
           <div className="flex justify-end gap-2 border-t border-[#eee] pt-4">

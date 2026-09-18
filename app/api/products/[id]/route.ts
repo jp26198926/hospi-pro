@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { products, categories, gstTypes } from "@/lib/db/schema";
+import { products, categories, gstTypes, uoms } from "@/lib/db/schema";
 import { productSchema } from "@/lib/validations/product";
 import { eq, ne, and } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
@@ -36,6 +36,8 @@ export async function GET(
         sellingPrice: products.sellingPrice,
         gstTypeId: products.gstTypeId,
         gstTypeName: gstTypes.name,
+        uomId: products.uomId,
+        uomName: uoms.name,
         status: products.status,
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
@@ -48,6 +50,7 @@ export async function GET(
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
       .leftJoin(gstTypes, eq(products.gstTypeId, gstTypes.id))
+      .leftJoin(uoms, eq(products.uomId, uoms.id))
       .where(and(eq(products.id, productId), ne(products.status, "Deleted")));
 
     if (!data) {
@@ -92,6 +95,21 @@ export async function PUT(
       return Response.json({ error: "Product not found" }, { status: 404 });
     }
 
+    const [conflictCode] = await db
+      .select()
+      .from(products)
+      .where(
+        and(
+          eq(products.code, parsed.data.code),
+          ne(products.id, productId),
+          ne(products.status, "Deleted")
+        )
+      );
+
+    if (conflictCode) {
+      return Response.json({ error: "Product code already exists" }, { status: 409 });
+    }
+
     const [conflict] = await db
       .select()
       .from(products)
@@ -110,6 +128,7 @@ export async function PUT(
     const [data] = await db
       .update(products)
       .set({
+        code: parsed.data.code,
         name: parsed.data.name,
         categoryId: parsed.data.categoryId || null,
         brand: parsed.data.brand || null,
@@ -120,6 +139,7 @@ export async function PUT(
         avgCost: parsed.data.avgCost?.toString() || "0",
         sellingPrice: parsed.data.sellingPrice?.toString() || "0",
         gstTypeId: parsed.data.gstTypeId,
+        uomId: parsed.data.uomId,
         updatedAt: new Date(),
         updatedBy: auth.userId,
       })

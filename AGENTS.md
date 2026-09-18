@@ -68,13 +68,15 @@ status         commonStatusEnum  notNull  default "Active"
 createdAt      timestamp("...", { withTimezone: true, mode: "date" })  defaultNow  notNull
 updatedAt      timestamp("...", { withTimezone: true, mode: "date" })  nullable    set on PUT only
 deletedAt      timestamp("...", { withTimezone: true, mode: "date" })  nullable    set on DELETE, cleared on PATCH restore
-createdBy      integer  FK → users.id  nullable  set to auth.userId on POST
-updatedBy      integer  FK → users.id  nullable  set to auth.userId on PUT
-deletedBy      integer  FK → users.id  nullable  set to auth.userId on DELETE, cleared on PATCH restore
+createdBy      bigint("...", { mode: "number" })  FK → users.id  nullable  set to auth.userId on POST
+updatedBy      bigint("...", { mode: "number" })  FK → users.id  nullable  set to auth.userId on PUT
+deletedBy      bigint("...", { mode: "number" })  FK → users.id  nullable  set to auth.userId on DELETE, cleared on PATCH restore
 deletedReason  text                  nullable  set on DELETE from optional request body { reason }, cleared on PATCH restore
 ```
 
 **Audit fields**: `requirePermission()` returns `AuthUser` with `userId` — use it to set `createdBy`/`updatedBy`/`deletedBy`. DELETE accepts optional JSON body `{ reason: string }` to populate `deletedReason`. PATCH (restore) must clear `deletedBy`, `deletedReason`, and set `updatedBy`.
+
+**Schema conventions**: All table IDs use `bigserial("id", { mode: "number" }).primaryKey()` and all FK columns use `bigint("col", { mode: "number" }).references(...)` — the `mode: "number"` ensures Drizzle returns JS `number` (not BigInt). Non-FK numeric columns (e.g. `pages.order`, `settingsMail.smtpPort`) stay as `integer`.
 
 Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `suppliers`, `products`, `gst_types`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
 
@@ -124,6 +126,8 @@ Hardcoded hex colors, not Tailwind theme tokens — match these exactly:
 **Dropdowns**: use `SearchableSelect` (`components/ui/searchable-select.tsx`) for all foreign-key / ID-based selects. Props: `options` (`{value, label, indent?}`), `value`, `onValueChange`, `placeholder?`, `allOption?`, `allLabel?`. Do NOT use base-ui `Select` for FK dropdowns — only for simple non-ID values (e.g. status All/Active/Deleted).
 
 **Mobile**: DataTables must transpose to card layout below `md` (`hidden md:block` table + `md:hidden` cards). Toolbars stack with `flex-col gap-3 sm:flex-row`. Copy the pattern from `components/roles/` or `components/departments/`.
+
+**Columns**: Count DataTable data columns only (exclude `#` and `Actions`; include `status` and domain fields). If more than 5 data columns, omit the **Created At** column from `getColumns()` for new modules. `#` and Actions stay. Exports/mobile/detail may still show dates. Reference: products omits Created At; roles/departments keep it as legacy narrow tables.
 
 **Exports**: PDF via `jspdf` + `jspdf-autotable`; Excel via `xlsx`. Include the status column.
 
