@@ -78,7 +78,9 @@ deletedReason  text                  nullable  set on DELETE from optional reque
 
 **Schema conventions**: All table IDs use `bigserial("id", { mode: "number" }).primaryKey()` and all FK columns use `bigint("col", { mode: "number" }).references(...)` — the `mode: "number"` ensures Drizzle returns JS `number` (not BigInt). Non-FK numeric columns (e.g. `pages.order`, `settingsMail.smtpPort`) stay as `integer`.
 
-Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `payment_methods`, `payment_terms`, `trans_types`, `stock_levels`, `stock_movements`, `suppliers`, `products`, `gst_types`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
+Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `payment_methods`, `payment_terms`, `trans_types`, `stock_levels`, `stock_movements`, `receivings`, `receiving_items`, `suppliers`, `products`, `gst_types`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
+
+**`receivings` / `receiving_items`**: document workflow enum `receiving_status` (`Draft` | `Completed` | `Cancelled`) — **not** `commonStatusEnum`. Trans # `RCV-#####` / batch `BATCH-######` derived from ids. Master form first; items on detail. **Mark as Completed** uses `db.transaction` in `lib/receiving-stock.ts`: insert `stock_movements` (+qty), upsert `stock_levels`, update `products.stock`/`lastCost`/`avgCost`. Draft cancel does **not** reverse stock; completed cancel can reverse via same helper. Trans types seeded: `Receiving`, `Receiving Cancel`.
 
 **`stock_levels` is special**: current qty per product+location (unique `(productId, locationId)`), **no status/soft-delete/createdAt**. UI and APIs are **read-only** (GET list/detail only; no Add/Edit/Delete UI). Future transaction modules upsert rows and set `updatedAt`/`updatedBy`.
 

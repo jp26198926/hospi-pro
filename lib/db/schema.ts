@@ -4,6 +4,8 @@ export const commonStatusEnum = pgEnum("status_common", ["Active", "Deleted"]);
 
 export const categoryTypeEnum = pgEnum("category_type", ["inventoriable", "consumable"]);
 
+export const receivingStatusEnum = pgEnum("receiving_status", ["Draft", "Completed", "Cancelled"]);
+
 export const departments = pgTable("departments", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   department: text("department").notNull().unique(),
@@ -126,6 +128,51 @@ export const stockMovements = pgTable("stock_movements", {
   createdBy: bigint("created_by", { mode: "number" }).references(
     (): AnyPgColumn => users.id
   ),
+});
+
+export const receivings = pgTable("receivings", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  date: timestamp("date", { withTimezone: true, mode: "date" }).notNull(),
+  supplierId: bigint("supplier_id", { mode: "number" })
+    .notNull()
+    .references(() => suppliers.id),
+  locationId: bigint("location_id", { mode: "number" })
+    .notNull()
+    .references(() => locations.id),
+  poNumber: text("po_number"),
+  invoiceNumber: text("invoice_number"),
+  remarks: text("remarks"),
+  status: receivingStatusEnum("status").notNull().default("Draft"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true, mode: "date" }),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  cancelledBy: bigint("cancelled_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  cancelledReason: text("cancelled_reason"),
+});
+
+export const receivingItems = pgTable("receiving_items", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  receivingId: bigint("receiving_id", { mode: "number" })
+    .notNull()
+    .references(() => receivings.id),
+  productId: bigint("product_id", { mode: "number" })
+    .notNull()
+    .references(() => products.id),
+  qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
+  unitCost: decimal("unit_cost", { precision: 10, scale: 4 }).notNull().default("0"),
+  totalCost: decimal("total_cost", { precision: 10, scale: 4 }).notNull().default("0"),
+  dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
+  remarks: text("remarks"),
+  status: receivingStatusEnum("status").notNull().default("Draft"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true, mode: "date" }),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  cancelledBy: bigint("cancelled_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  cancelledReason: text("cancelled_reason"),
 });
 
 export const suppliers = pgTable("suppliers", {
