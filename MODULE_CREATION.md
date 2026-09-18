@@ -2,7 +2,7 @@
 
 How to add a new CRUD module to this RBAC app. Follow the steps in order.
 
-**Reference modules**: `departments` (simple), `roles` (has clone modal + detail page with a child table), `products` (wide table, required FKs `uomId`/`gstTypeId`, editable unique code + next-code prefill, Created At omitted).
+**Reference modules**: `departments` (simple), `roles` (has clone modal + detail page with a child table), `products` (wide table, required FKs `uomId`/`gstTypeId`, editable unique code + next-code prefill, Created At omitted), `payment_methods` (simple text module with **dual unique fields** `name` + `description`, audit fields, Created At shown).
 
 ---
 
