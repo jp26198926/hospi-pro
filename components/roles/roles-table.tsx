@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, Role } from "./roles-columns";
 import { RoleFormModal } from "./role-form-modal";
 import { RoleDeleteModal } from "./role-delete-modal";
@@ -178,8 +178,8 @@ export function RolesTable({ timezone }: { timezone: string }) {
         idx + 1,
         role.role,
         role.status,
-        formatDateTime(role.createdAt, timezone),
-        role.updatedAt ? formatDateTime(role.updatedAt, timezone) : "-",
+        formatDateOnly(role.createdAt, timezone),
+        role.updatedAt ? formatDateOnly(role.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -192,8 +192,8 @@ export function RolesTable({ timezone }: { timezone: string }) {
       "#": idx + 1,
       Role: role.role,
       Status: role.status,
-      "Created At": formatDateTime(role.createdAt, timezone),
-      "Updated At": role.updatedAt ? formatDateTime(role.updatedAt, timezone) : "-",
+      "Created At": formatDateOnly(role.createdAt, timezone),
+      "Updated At": role.updatedAt ? formatDateOnly(role.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -302,8 +302,8 @@ export function RolesTable({ timezone }: { timezone: string }) {
               <div className="px-4 py-3">
                 <p className="text-base font-semibold text-[#337ab7]">{role.role}</p>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(role.createdAt, timezone)}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {role.updatedAt ? formatDateTime(role.updatedAt, timezone) : "-"}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateOnly(role.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {role.updatedAt ? formatDateOnly(role.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
 

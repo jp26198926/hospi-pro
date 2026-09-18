@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { paymentMethods } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
-import { formatDateTimeLong } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -115,7 +115,7 @@ export default async function PaymentMethodDetailPage({ params }: Props) {
                 Created At
               </dt>
               <dd className="mt-1 text-sm text-foreground">
-                {formatDateTimeLong(paymentMethod.createdAt, tz)}
+                {formatDateOnly(paymentMethod.createdAt, tz)}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
@@ -124,7 +124,7 @@ export default async function PaymentMethodDetailPage({ params }: Props) {
               </dt>
               <dd className="mt-1 text-sm text-foreground">
                 {paymentMethod.updatedAt
-                  ? formatDateTimeLong(paymentMethod.updatedAt, tz)
+                  ? formatDateOnly(paymentMethod.updatedAt, tz)
                   : "-"}
               </dd>
             </div>
@@ -134,7 +134,7 @@ export default async function PaymentMethodDetailPage({ params }: Props) {
               </dt>
               <dd className="mt-1 text-sm text-foreground">
                 {paymentMethod.deletedAt
-                  ? formatDateTimeLong(paymentMethod.deletedAt, tz)
+                  ? formatDateOnly(paymentMethod.deletedAt, tz)
                   : "-"}
               </dd>
             </div>

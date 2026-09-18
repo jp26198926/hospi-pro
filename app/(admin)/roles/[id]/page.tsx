@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { roles } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
-import { formatDateTimeLong } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -109,14 +109,14 @@ export default async function RoleDetailPage({ params }: Props) {
                 <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
                   <dt className="text-xs font-semibold uppercase text-muted-foreground">Created At</dt>
                   <dd className="mt-1 text-sm text-foreground">
-                    {formatDateTimeLong(role.createdAt, tz)}
+                    {formatDateOnly(role.createdAt, tz)}
                   </dd>
                 </div>
                 <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
                   <dt className="text-xs font-semibold uppercase text-muted-foreground">Updated At</dt>
                   <dd className="mt-1 text-sm text-foreground">
                     {role.updatedAt
-                      ? formatDateTimeLong(role.updatedAt, tz)
+                      ? formatDateOnly(role.updatedAt, tz)
                       : "-"}
                   </dd>
                 </div>

@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, GstType } from "./gst-types-columns";
 import { GstTypeFormModal } from "./gst-type-form-modal";
 import { GstTypeDeleteModal } from "./gst-type-delete-modal";
@@ -166,8 +166,8 @@ export function GstTypesTable({ timezone }: { timezone: string }) {
         gt.code,
         gt.name,
         gt.status,
-        formatDateTime(gt.createdAt, timezone),
-        gt.updatedAt ? formatDateTime(gt.updatedAt, timezone) : "-",
+        formatDateOnly(gt.createdAt, timezone),
+        gt.updatedAt ? formatDateOnly(gt.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -180,8 +180,8 @@ export function GstTypesTable({ timezone }: { timezone: string }) {
       Code: gt.code,
       Name: gt.name,
       Status: gt.status,
-      "Created At": formatDateTime(gt.createdAt, timezone),
-      "Updated At": gt.updatedAt ? formatDateTime(gt.updatedAt, timezone) : "-",
+      "Created At": formatDateOnly(gt.createdAt, timezone),
+      "Updated At": gt.updatedAt ? formatDateOnly(gt.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -288,8 +288,8 @@ export function GstTypesTable({ timezone }: { timezone: string }) {
                 <p className="text-base font-semibold text-[#337ab7]">{gstType.code}</p>
                 <p className="text-sm text-[#333]">{gstType.name}</p>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(gstType.createdAt, timezone)}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {gstType.updatedAt ? formatDateTime(gstType.updatedAt, timezone) : "-"}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateOnly(gstType.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {gstType.updatedAt ? formatDateOnly(gstType.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
               <div className="flex border-t border-[#eee]">

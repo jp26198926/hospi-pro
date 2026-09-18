@@ -33,7 +33,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, StockMovement, formatQty } from "./stock-movements-columns";
 import { StockMovementSearchModal } from "./stock-movement-search-modal";
 
@@ -170,14 +170,14 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
       body: data.map((item, idx) => [
         idx + 1,
         item.transTypeName,
-        formatDateTime(item.date, timezone),
+        formatDateOnly(item.date, timezone),
         item.productCode,
         item.productName,
         formatQty(item.qty),
         item.locationName || "-",
         item.referenceDescription || "-",
         item.remarks || "-",
-        formatDateTime(item.createdAt, timezone),
+        formatDateOnly(item.createdAt, timezone),
         item.createdByEmail || "-",
       ]),
     });
@@ -189,14 +189,14 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
     const worksheetData = data.map((item, idx) => ({
       "#": idx + 1,
       "Trans Type": item.transTypeName,
-      Date: formatDateTime(item.date, timezone),
+      Date: formatDateOnly(item.date, timezone),
       "Product Code": item.productCode,
       "Product Name": item.productName,
       QTY: Number(item.qty) || 0,
       Location: item.locationName || "-",
       Reference: item.referenceDescription || "-",
       Remarks: item.remarks || "-",
-      "Created At": formatDateTime(item.createdAt, timezone),
+      "Created At": formatDateOnly(item.createdAt, timezone),
       "Created By": item.createdByEmail || "-",
     }));
 
@@ -332,7 +332,7 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
                     </p>
                     <p>
                       <span className="font-medium text-[#666]">Date:</span>{" "}
-                      {formatDateTime(item.date, timezone)}
+                      {formatDateOnly(item.date, timezone)}
                     </p>
                     <p>
                       <span className="font-medium text-[#666]">Location:</span>{" "}
@@ -348,7 +348,7 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
                     </p>
                     <p>
                       <span className="font-medium text-[#666]">Created:</span>{" "}
-                      {formatDateTime(item.createdAt, timezone)}
+                      {formatDateOnly(item.createdAt, timezone)}
                     </p>
                     <p>
                       <span className="font-medium text-[#666]">By:</span>{" "}

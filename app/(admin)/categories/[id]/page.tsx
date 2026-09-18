@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
-import { formatDateTimeLong } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -109,14 +109,14 @@ export default async function CategoryDetailPage({ params }: Props) {
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Created At</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {formatDateTimeLong(category.createdAt, tz)}
+                {formatDateOnly(category.createdAt, tz)}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Updated At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {category.updatedAt
-                  ? formatDateTimeLong(category.updatedAt, tz)
+                  ? formatDateOnly(category.updatedAt, tz)
                   : "-"}
               </dd>
             </div>
@@ -124,7 +124,7 @@ export default async function CategoryDetailPage({ params }: Props) {
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Deleted At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {category.deletedAt
-                  ? formatDateTimeLong(category.deletedAt, tz)
+                  ? formatDateOnly(category.deletedAt, tz)
                   : "-"}
               </dd>
             </div>

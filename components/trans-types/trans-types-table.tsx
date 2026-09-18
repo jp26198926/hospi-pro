@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, TransType } from "./trans-types-columns";
 import { TransTypeFormModal } from "./trans-type-form-modal";
 import { TransTypeDeleteModal } from "./trans-type-delete-modal";
@@ -169,8 +169,8 @@ export function TransTypesTable({ timezone }: { timezone: string }) {
         idx + 1,
         item.name,
         item.status,
-        formatDateTime(item.createdAt, timezone),
-        item.updatedAt ? formatDateTime(item.updatedAt, timezone) : "-",
+        formatDateOnly(item.createdAt, timezone),
+        item.updatedAt ? formatDateOnly(item.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -182,8 +182,8 @@ export function TransTypesTable({ timezone }: { timezone: string }) {
       "#": idx + 1,
       Name: item.name,
       Status: item.status,
-      "Created At": formatDateTime(item.createdAt, timezone),
-      "Updated At": item.updatedAt ? formatDateTime(item.updatedAt, timezone) : "-",
+      "Created At": formatDateOnly(item.createdAt, timezone),
+      "Updated At": item.updatedAt ? formatDateOnly(item.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -320,11 +320,11 @@ export function TransTypesTable({ timezone }: { timezone: string }) {
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                   <p>
                     <span className="font-medium text-[#666]">Created:</span>{" "}
-                    {formatDateTime(item.createdAt, timezone)}
+                    {formatDateOnly(item.createdAt, timezone)}
                   </p>
                   <p>
                     <span className="font-medium text-[#666]">Updated:</span>{" "}
-                    {item.updatedAt ? formatDateTime(item.updatedAt, timezone) : "-"}
+                    {item.updatedAt ? formatDateOnly(item.updatedAt, timezone) : "-"}
                   </p>
                 </div>
               </div>

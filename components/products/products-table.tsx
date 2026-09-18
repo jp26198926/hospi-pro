@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, Product } from "./products-columns";
 import { ProductFormModal } from "./product-form-modal";
 import { ProductDeleteModal } from "./product-delete-modal";
@@ -199,7 +199,7 @@ export function ProductsTable({ timezone }: { timezone: string }) {
       "Avg Cost": Number(p.avgCost).toFixed(4),
       "Selling Price": Number(p.sellingPrice).toFixed(4),
       Status: p.status,
-      "Created At": formatDateTime(p.createdAt, timezone),
+      "Created At": formatDateOnly(p.createdAt, timezone),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -309,7 +309,7 @@ export function ProductsTable({ timezone }: { timezone: string }) {
                   {product.brand && <p><span className="font-medium text-[#666]">Brand:</span> {product.brand}</p>}
                   {product.uomName && <p><span className="font-medium text-[#666]">UOM:</span> {product.uomName}</p>}
                   <p><span className="font-medium text-[#666]">Stock:</span> {Number(product.stock).toFixed(4)}</p>
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(product.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateOnly(product.createdAt, timezone)}</p>
                 </div>
               </div>
               <div className="flex border-t border-[#eee]">

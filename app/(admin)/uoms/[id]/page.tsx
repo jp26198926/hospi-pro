@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { uoms } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
-import { formatDateTimeLong } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -95,14 +95,14 @@ export default async function UomDetailPage({ params }: Props) {
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Created At</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {formatDateTimeLong(uom.createdAt, tz)}
+                {formatDateOnly(uom.createdAt, tz)}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Updated At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {uom.updatedAt
-                  ? formatDateTimeLong(uom.updatedAt, tz)
+                  ? formatDateOnly(uom.updatedAt, tz)
                   : "-"}
               </dd>
             </div>
@@ -110,7 +110,7 @@ export default async function UomDetailPage({ params }: Props) {
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Deleted At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {uom.deletedAt
-                  ? formatDateTimeLong(uom.deletedAt, tz)
+                  ? formatDateOnly(uom.deletedAt, tz)
                   : "-"}
               </dd>
             </div>

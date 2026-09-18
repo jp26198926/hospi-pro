@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, Uom } from "./uoms-columns";
 import { UomFormModal } from "./uom-form-modal";
 import { UomDeleteModal } from "./uom-delete-modal";
@@ -168,8 +168,8 @@ export function UomsTable({ timezone }: { timezone: string }) {
         uom.code,
         uom.name,
         uom.status,
-        formatDateTime(uom.createdAt, timezone),
-        uom.updatedAt ? formatDateTime(uom.updatedAt, timezone) : "-",
+        formatDateOnly(uom.createdAt, timezone),
+        uom.updatedAt ? formatDateOnly(uom.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -182,8 +182,8 @@ export function UomsTable({ timezone }: { timezone: string }) {
       Code: uom.code,
       Name: uom.name,
       Status: uom.status,
-      "Created At": formatDateTime(uom.createdAt, timezone),
-      "Updated At": uom.updatedAt ? formatDateTime(uom.updatedAt, timezone) : "-",
+      "Created At": formatDateOnly(uom.createdAt, timezone),
+      "Updated At": uom.updatedAt ? formatDateOnly(uom.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -290,8 +290,8 @@ export function UomsTable({ timezone }: { timezone: string }) {
                 <p className="text-base font-semibold text-[#337ab7]">{uom.code}</p>
                 <p className="text-sm text-[#333]">{uom.name}</p>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(uom.createdAt, timezone)}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {uom.updatedAt ? formatDateTime(uom.updatedAt, timezone) : "-"}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateOnly(uom.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {uom.updatedAt ? formatDateOnly(uom.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
               <div className="flex border-t border-[#eee]">

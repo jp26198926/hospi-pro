@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { products, categories, users, gstTypes, uoms } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
-import { formatDateTimeLong } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -158,7 +158,7 @@ export default async function ProductDetailPage({ params }: Props) {
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Created At</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {formatDateTimeLong(product.createdAt, tz)}
+                {formatDateOnly(product.createdAt, tz)}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
@@ -169,7 +169,7 @@ export default async function ProductDetailPage({ params }: Props) {
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Updated At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {product.updatedAt
-                  ? formatDateTimeLong(product.updatedAt, tz)
+                  ? formatDateOnly(product.updatedAt, tz)
                   : "-"}
               </dd>
             </div>
@@ -177,7 +177,7 @@ export default async function ProductDetailPage({ params }: Props) {
               <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
                 <dt className="text-xs font-semibold uppercase text-muted-foreground">Deleted At</dt>
                 <dd className="mt-1 text-sm text-foreground">
-                  {formatDateTimeLong(product.deletedAt, tz)}
+                  {formatDateOnly(product.deletedAt, tz)}
                 </dd>
               </div>
             )}

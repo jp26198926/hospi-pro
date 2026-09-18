@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 
 export interface StockLevel {
   id: number;
@@ -122,7 +122,7 @@ export function getColumns({
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original.updatedAt
-            ? formatDateTime(row.original.updatedAt, timezone)
+            ? formatDateOnly(row.original.updatedAt, timezone)
             : "-"}
         </span>
       ),

@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, Category } from "./categories-columns";
 import { CategoryFormModal } from "./category-form-modal";
 import { CategoryDeleteModal } from "./category-delete-modal";
@@ -169,8 +169,8 @@ export function CategoriesTable({ timezone }: { timezone: string }) {
         cat.type === "inventoriable" ? "Inventoriable" : "Consumable",
         cat.description || "-",
         cat.status,
-        formatDateTime(cat.createdAt, timezone),
-        cat.updatedAt ? formatDateTime(cat.updatedAt, timezone) : "-",
+        formatDateOnly(cat.createdAt, timezone),
+        cat.updatedAt ? formatDateOnly(cat.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -184,8 +184,8 @@ export function CategoriesTable({ timezone }: { timezone: string }) {
       Type: cat.type === "inventoriable" ? "Inventoriable" : "Consumable",
       Description: cat.description || "-",
       Status: cat.status,
-      "Created At": formatDateTime(cat.createdAt, timezone),
-      "Updated At": cat.updatedAt ? formatDateTime(cat.updatedAt, timezone) : "-",
+      "Created At": formatDateOnly(cat.createdAt, timezone),
+      "Updated At": cat.updatedAt ? formatDateOnly(cat.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -304,8 +304,8 @@ export function CategoriesTable({ timezone }: { timezone: string }) {
                   {category.description && (
                     <p><span className="font-medium text-[#666]">Description:</span> {category.description}</p>
                   )}
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(category.createdAt, timezone)}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {category.updatedAt ? formatDateTime(category.updatedAt, timezone) : "-"}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateOnly(category.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {category.updatedAt ? formatDateOnly(category.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
               <div className="flex border-t border-[#eee]">

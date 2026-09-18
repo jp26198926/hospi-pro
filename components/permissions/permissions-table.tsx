@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, Permission } from "./permissions-columns";
 import { PermissionFormModal } from "./permission-form-modal";
 import { PermissionDeleteModal } from "./permission-delete-modal";
@@ -169,8 +169,8 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
         idx + 1,
         perm.permission,
         perm.status,
-        formatDateTime(perm.createdAt, timezone),
-        perm.updatedAt ? formatDateTime(perm.updatedAt, timezone) : "-",
+        formatDateOnly(perm.createdAt, timezone),
+        perm.updatedAt ? formatDateOnly(perm.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -183,8 +183,8 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
       "#": idx + 1,
       Permission: perm.permission,
       Status: perm.status,
-      "Created At": formatDateTime(perm.createdAt, timezone),
-      "Updated At": perm.updatedAt ? formatDateTime(perm.updatedAt, timezone) : "-",
+      "Created At": formatDateOnly(perm.createdAt, timezone),
+      "Updated At": perm.updatedAt ? formatDateOnly(perm.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -293,8 +293,8 @@ export function PermissionsTable({ timezone }: { timezone: string }) {
               <div className="px-4 py-3">
                 <p className="text-base font-semibold text-[#337ab7]">{permission.permission}</p>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(permission.createdAt, timezone)}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {permission.updatedAt ? formatDateTime(permission.updatedAt, timezone) : "-"}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateOnly(permission.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {permission.updatedAt ? formatDateOnly(permission.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
 

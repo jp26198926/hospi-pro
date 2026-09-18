@@ -56,7 +56,7 @@ All `db:*` scripts use `dotenv-cli` with `-e .env.local` — they load env autom
 - **DB connection** (`lib/db/index.ts`): uses `globalThis` to avoid leaks during HMR.
 - **App settings** (`lib/settings.ts`): cached 30s in-memory helper reading `settings_app` id=1 (logo, favicon, name, timezone, currency, storage type). Also exports `getAppTimezone()`.
 - **RBAC enforcement**: `lib/permissions.ts` — cached (30s per roleId) permission map from `role_permissions` join. `lib/api-auth.ts` — `requirePermission(request, pagePath, permName)` for API routes (returns AuthUser or 401/403 Response), `requireAuth(request)` for auth-only routes, `requirePageRead(pagePath)` for server component pages (calls `notFound()` on failure). Permission mapping: GET→Read, POST→Add, PUT→Edit, DELETE→Delete, PATCH→Restore, Clone→Clone, Export→Export. Sidebar uses `/api/pages?mine=1` filtered by View permission.
-- **Datetime** (`lib/datetime.ts`): pure formatting functions (`formatDateTime`, `formatDateTimeLong`) using `Intl.DateTimeFormat`. **No db/server imports** — client components depend on this. All timestamp columns use `timestamp({ withTimezone: true, mode: "date" })` (timestamptz).
+- **Datetime** (`lib/datetime.ts`): pure formatting — **`formatDateOnly(date, timeZone)` is the project standard** and always returns **`YYYY-MM-DD`** (app timezone via `getAppTimezone()`). `formatDateTime` / `formatDateTimeLong` are deprecated aliases of `formatDateOnly`. **No db/server imports** — client components depend on this. All timestamp columns use `timestamp({ withTimezone: true, mode: "date" })` (timestamptz).
 - **File uploads**: `app/api/upload/` — filesystem (`public/uploads/`) or Cloudinary, chosen by `settings_app.primaryStorage`.
 
 ## Schema conventions
@@ -130,6 +130,12 @@ Hardcoded hex colors, not Tailwind theme tokens — match these exactly:
 
 **Dropdowns**: use `SearchableSelect` (`components/ui/searchable-select.tsx`) for all foreign-key / ID-based selects. Props: `options` (`{value, label, indent?}`), `value`, `onValueChange`, `placeholder?`, `allOption?`, `allLabel?`. Do NOT use base-ui `Select` for FK dropdowns — only for simple non-ID values (e.g. status All/Active/Deleted).
 
+**Dates**:
+- **Display (all pages):** always **`YYYY-MM-DD`** via `formatDateOnly` from `lib/datetime.ts` (tables, mobile cards, PDF/Excel, detail pages). Timezone: `getAppTimezone()` / table `timezone` prop.
+- **`formatDateTime` / `formatDateTimeLong`** — deprecated aliases; prefer `formatDateOnly` in new code.
+- **Date inputs (forms + Advanced Search filters):** must use **`components/ui/date-picker.tsx`** — calendar only, no free typing, no `type="date"`. Props: `value`/`onValueChange` as `""` or `"YYYY-MM-DD"`, `placeholder?`, `id?`, `allowClear?`.
+- Reference: `components/stock-movements/` (format + DatePicker filters).
+
 **Mobile**: DataTables must transpose to card layout below `md` (`hidden md:block` table + `md:hidden` cards). Toolbars stack with `flex-col gap-3 sm:flex-row`. Copy the pattern from `components/roles/` or `components/departments/`.
 
 **Columns**: Count DataTable data columns only (exclude `#` and `Actions`; include `status` and domain fields). If more than 5 data columns, omit the **Created At** column from `getColumns()` for new modules. `#` and Actions stay. Exports/mobile/detail may still show dates. Reference: products omits Created At; roles/departments keep it as legacy narrow tables.
@@ -143,7 +149,7 @@ Hardcoded hex colors, not Tailwind theme tokens — match these exactly:
 - `db:seed-timezones` and `db:seed-currencies` are required after a fresh push.
 - `role_permissions` has a composite unique index on `(roleId, pageId, permissionId)` — inserts must respect it.
 - `users` has self-referencing `createdBy`/`updatedBy`/`deletedBy` FKs.
-- `lib/datetime.ts` must stay pure (no db/server imports) — client components import from it.
+- `lib/datetime.ts` must stay pure (no db/server imports) — client components import from it. Display dates with **`formatDateOnly`** (`YYYY-MM-DD`); date inputs use `DatePicker`.
 - Sidebar parent pages need a View grant for children to appear (child won't render without its parent group).
 - `accessToken` cookie is set on login and cleared on logout — required for SSR page guards to read roleId.
 - Permission cache (`lib/permissions.ts`) invalidates on role-permission mutations — call `invalidatePermissionCache(roleId)` after POST/DELETE on role-permissions or roles/clone.

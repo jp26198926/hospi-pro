@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { suppliers, users } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
-import { formatDateTimeLong } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -119,14 +119,14 @@ export default async function SupplierDetailPage({ params }: Props) {
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Created At</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {formatDateTimeLong(supplier.createdAt, tz)}
+                {formatDateOnly(supplier.createdAt, tz)}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">Updated At</dt>
               <dd className="mt-1 text-sm text-foreground">
                 {supplier.updatedAt
-                  ? formatDateTimeLong(supplier.updatedAt, tz)
+                  ? formatDateOnly(supplier.updatedAt, tz)
                   : "-"}
               </dd>
             </div>
@@ -138,7 +138,7 @@ export default async function SupplierDetailPage({ params }: Props) {
               <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
                 <dt className="text-xs font-semibold uppercase text-muted-foreground">Deleted At</dt>
                 <dd className="mt-1 text-sm text-foreground">
-                  {formatDateTimeLong(supplier.deletedAt, tz)}
+                  {formatDateOnly(supplier.deletedAt, tz)}
                 </dd>
               </div>
             )}

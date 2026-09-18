@@ -303,7 +303,7 @@ export default async function CategoriesPage() {
 - `await params`, `notFound()` on invalid/missing.
 - Direct DB query (no API fetch).
 - Ace Admin card + `dl` grid; status badge.
-- Dates via `formatDateTimeLong(date, tz)` from `lib/datetime.ts` — fetch timezone with `const tz = await getAppTimezone()` from `lib/settings.ts`.
+- Dates via **`formatDateOnly(date, tz)`** from `lib/datetime.ts` → always **`YYYY-MM-DD`** — fetch timezone with `const tz = await getAppTimezone()` from `lib/settings.ts`.
 - Back button links to `/<plural>`.
 
 **Timezone prop for tables**: if your table displays dates, pass timezone from the page:
@@ -318,7 +318,13 @@ export default async function CategoriesPage() {
 }
 ```
 
-Table components use `formatDateTime(date, timezone)` from `lib/datetime.ts` for card views and exports.
+Table components use **`formatDateOnly(date, timezone)`** from `lib/datetime.ts` for DataTable cells, mobile cards, PDF, and Excel — display format is always **`YYYY-MM-DD`**.
+
+**Date fields (forms / search filters)**
+- Use **`DatePicker`** from `components/ui/date-picker.tsx` — calendar only; `value` / `onValueChange` are `""` or `"YYYY-MM-DD"`.
+- Do **not** use `type="date"` or free-typed date text inputs.
+- Display dates with `formatDateOnly` — never with legacy datetime helpers.
+- Reference: `components/stock-movements/stock-movement-search-modal.tsx`.
 
 ---
 
@@ -357,14 +363,14 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 - [ ] `app/api/<plural>/route.ts` — GET (requirePermission Read) + POST (requirePermission Add, set `createdBy: auth.userId`); unique code/FK handling as needed
 - [ ] `app/api/<plural>/[id]/route.ts` — GET (Read) + PUT (Edit, set `updatedBy`) + DELETE (Delete, set `deletedBy`/`deletedReason`) + PATCH (Restore, clear audit fields)
 - [ ] Optional helper e.g. `app/api/<plural>/next-code/route.ts` — parent `requirePermission` only; not in `PUBLIC_API_ROUTES`
-- [ ] `components/<plural>/<plural>-columns.tsx` — apply Created At rule: if data columns (excluding `#` and Actions) > 5, omit `createdAt` column; join/display FK `*Name` columns as needed
-- [ ] `components/<plural>/<plural>-table.tsx` (accepts `timezone` prop if showing dates)
-- [ ] `components/<plural>/<singular>-form-modal.tsx` — SearchableSelect for FKs; required FKs without `allOption`
+- [ ] `components/<plural>/<plural>-columns.tsx` — apply Created At rule: if data columns (excluding `#` and Actions) > 5, omit `createdAt` column; join/display FK `*Name` columns as needed; date cells use **`formatDateOnly`** (`YYYY-MM-DD`)
+- [ ] `components/<plural>/<plural>-table.tsx` (accepts `timezone` prop if showing dates; PDF/Excel/mobile use `formatDateOnly`)
+- [ ] `components/<plural>/<singular>-form-modal.tsx` — SearchableSelect for FKs; required FKs without `allOption`; date fields use **`DatePicker`** (not `type="date"`)
 - [ ] `components/<plural>/<singular>-delete-modal.tsx` (with optional reason input)
-- [ ] `components/<plural>/<singular>-search-modal.tsx`
+- [ ] `components/<plural>/<singular>-search-modal.tsx` — date filters use **`DatePicker`** if any
 - [ ] `app/(admin)/<plural>/layout.tsx`
 - [ ] `app/(admin)/<plural>/page.tsx` (with `requirePageRead` guard + timezone prop)
-- [ ] Optional: `app/(admin)/<plural>/[id]/page.tsx` (with `requirePageRead` + `formatDateTimeLong`)
+- [ ] Optional: `app/(admin)/<plural>/[id]/page.tsx` (with `requirePageRead` + **`formatDateOnly`** for all date cells)
 - [ ] Insert row into `pages` table for sidebar
 - [ ] Grant View on parent page + View/Read on new page for roles that need access
 - [ ] Grant **Read** on FK lookup pages (e.g. `/uoms`) for roles that open this module’s forms
@@ -381,7 +387,8 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 - **`params` is a Promise** in Next.js 16 — always `await params` in pages and route handlers.
 - **All timestamps** must use `timestamp("...", { withTimezone: true, mode: "date" })` — bare `timestamp()` causes double timezone offset bugs.
 - **Permission checks**: every API handler needs `requirePermission`; every page needs `requirePageRead`. Use the `pages` table `path` as the pagePath argument.
-- **`lib/datetime.ts` must stay pure** (no db/server imports) — client components import from it.
+- **`lib/datetime.ts` must stay pure** (no db/server imports) — client components import from it. Display dates with **`formatDateOnly`** only (`YYYY-MM-DD`).
+- **Date inputs**: use **`DatePicker`** (`components/ui/date-picker.tsx`) for form/filter date fields — calendar only, value `""` or `"YYYY-MM-DD"`. Do **not** use `type="date"` or free-typed date strings. Display never uses the picker.
 - **FK dropdowns**: use `SearchableSelect` (`components/ui/searchable-select.tsx`), not base-ui `Select`. Use base-ui `Select` only for simple non-ID values (e.g. status All/Active/Deleted). Required FKs: no `allOption`; empty value → `0` so zod `.positive()` fails.
 - **FK form lookups**: forms fetch FK list APIs — grant role **Read** on those page paths (products needs `/categories`, `/gst-types`, `/uoms`) or dropdowns stay empty.
 - **Unique user-editable codes**: validate max length; POST/PUT uniqueness excluding Deleted (PUT also excludes self). Helper prefill endpoints stay authenticated under the parent page path — not in `PUBLIC_API_ROUTES`.

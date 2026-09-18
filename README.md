@@ -20,7 +20,7 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Suppliers management (with audit trail)
 - Products management (editable product codes with optional next-code prefill, required UOM + GST type FKs, optional category, stock/cost tracking)
 - Multi-currency support (155 ISO 4217 currencies)
-- Timezone-aware date display (configurable per app)
+- Timezone-aware date display — **all dates shown as `YYYY-MM-DD`** (app timezone); date form/filter fields use a calendar **DatePicker** (`YYYY-MM-DD`, no manual typing)
 - File upload with configurable storage (File System / Cloudinary)
 - Application settings (logo, favicon, name, timezone, currency, storage type)
 - Password management (change password, forgot/reset flow)
@@ -153,7 +153,7 @@ lib/
 ├── api-auth.ts           # requirePermission, requireAuth, requirePageRead helpers
 ├── api-client.ts         # apiFetch wrapper (attaches Bearer token)
 ├── auth.ts               # JWT generation/verification, bcrypt helpers
-├── datetime.ts           # Pure date formatting (no db imports)
+├── datetime.ts           # Pure date formatting — formatDateOnly → YYYY-MM-DD (no db imports)
 ├── db/
 │   ├── index.ts          # Drizzle database client
 │   └── schema.ts         # All table schemas

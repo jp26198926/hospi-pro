@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, Location } from "./locations-columns";
 import { LocationFormModal } from "./location-form-modal";
 import { LocationDeleteModal } from "./location-delete-modal";
@@ -167,8 +167,8 @@ export function LocationsTable({ timezone }: { timezone: string }) {
         idx + 1,
         loc.name,
         loc.status,
-        formatDateTime(loc.createdAt, timezone),
-        loc.updatedAt ? formatDateTime(loc.updatedAt, timezone) : "-",
+        formatDateOnly(loc.createdAt, timezone),
+        loc.updatedAt ? formatDateOnly(loc.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -180,8 +180,8 @@ export function LocationsTable({ timezone }: { timezone: string }) {
       "#": idx + 1,
       Name: loc.name,
       Status: loc.status,
-      "Created At": formatDateTime(loc.createdAt, timezone),
-      "Updated At": loc.updatedAt ? formatDateTime(loc.updatedAt, timezone) : "-",
+      "Created At": formatDateOnly(loc.createdAt, timezone),
+      "Updated At": loc.updatedAt ? formatDateOnly(loc.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -287,8 +287,8 @@ export function LocationsTable({ timezone }: { timezone: string }) {
               <div className="px-4 py-3">
                 <p className="text-base font-semibold text-[#337ab7]">{location.name}</p>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(location.createdAt, timezone)}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {location.updatedAt ? formatDateTime(location.updatedAt, timezone) : "-"}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateOnly(location.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {location.updatedAt ? formatDateOnly(location.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
               <div className="flex border-t border-[#eee]">

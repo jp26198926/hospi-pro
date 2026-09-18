@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Search, X } from "lucide-react";
 
 interface SelectOption {
@@ -118,27 +119,26 @@ export function StockMovementSearchModal({
               <Label htmlFor="date-from" className="text-sm font-medium text-[#333]">
                 Date From
               </Label>
-              <Input
+              <DatePicker
                 id="date-from"
-                type="date"
                 value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="border-[#ccc] focus:border-[#337ab7] focus:ring-[#337ab7]"
+                onValueChange={setDateFrom}
+                placeholder="YYYY-MM-DD"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="date-to" className="text-sm font-medium text-[#333]">
                 Date To
               </Label>
-              <Input
+              <DatePicker
                 id="date-to"
-                type="date"
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="border-[#ccc] focus:border-[#337ab7] focus:ring-[#337ab7]"
+                onValueChange={setDateTo}
+                placeholder="YYYY-MM-DD"
               />
             </div>
           </div>
+          <p className="text-xs text-muted-foreground">Select dates (YYYY-MM-DD)</p>
         </div>
 
         <div className="flex justify-end gap-2 border-t border-[#eee] bg-[#f8f8f8] px-4 py-3">

@@ -41,7 +41,6 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { format } from "date-fns";
 import { getColumns, UserRecord } from "./users-columns";
 import { UserFormModal } from "./user-form-modal";
 import { UserDeleteModal } from "./user-delete-modal";

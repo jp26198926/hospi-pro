@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, Department } from "./departments-columns";
 import { DepartmentFormModal } from "./department-form-modal";
 import { DepartmentDeleteModal } from "./department-delete-modal";
@@ -167,8 +167,8 @@ export function DepartmentsTable({ timezone }: { timezone: string }) {
         idx + 1,
         dept.department,
         dept.status,
-        formatDateTime(dept.createdAt, timezone),
-        dept.updatedAt ? formatDateTime(dept.updatedAt, timezone) : "-",
+        formatDateOnly(dept.createdAt, timezone),
+        dept.updatedAt ? formatDateOnly(dept.updatedAt, timezone) : "-",
       ]),
     });
 
@@ -180,8 +180,8 @@ export function DepartmentsTable({ timezone }: { timezone: string }) {
       "#": idx + 1,
       Department: dept.department,
       Status: dept.status,
-      "Created At": formatDateTime(dept.createdAt, timezone),
-      "Updated At": dept.updatedAt ? formatDateTime(dept.updatedAt, timezone) : "-",
+      "Created At": formatDateOnly(dept.createdAt, timezone),
+      "Updated At": dept.updatedAt ? formatDateOnly(dept.updatedAt, timezone) : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -287,8 +287,8 @@ export function DepartmentsTable({ timezone }: { timezone: string }) {
               <div className="px-4 py-3">
                 <p className="text-base font-semibold text-[#337ab7]">{department.department}</p>
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(department.createdAt, timezone)}</p>
-                  <p><span className="font-medium text-[#666]">Updated:</span> {department.updatedAt ? formatDateTime(department.updatedAt, timezone) : "-"}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateOnly(department.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Updated:</span> {department.updatedAt ? formatDateOnly(department.updatedAt, timezone) : "-"}</p>
                 </div>
               </div>
               <div className="flex border-t border-[#eee]">

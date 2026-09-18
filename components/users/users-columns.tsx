@@ -2,7 +2,6 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Eye, Pencil, Trash2, ArrowUpDown, RotateCcw, Key } from "lucide-react";
-import { format } from "date-fns";
 
 export interface UserRecord {
   id: number;

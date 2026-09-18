@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { transTypes } from "@/lib/db/schema";
 import { eq, ne, and } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
-import { formatDateTimeLong } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -97,7 +97,7 @@ export default async function TransTypeDetailPage({ params }: Props) {
                 Created At
               </dt>
               <dd className="mt-1 text-sm text-foreground">
-                {formatDateTimeLong(transType.createdAt, tz)}
+                {formatDateOnly(transType.createdAt, tz)}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
@@ -105,7 +105,7 @@ export default async function TransTypeDetailPage({ params }: Props) {
                 Updated At
               </dt>
               <dd className="mt-1 text-sm text-foreground">
-                {transType.updatedAt ? formatDateTimeLong(transType.updatedAt, tz) : "-"}
+                {transType.updatedAt ? formatDateOnly(transType.updatedAt, tz) : "-"}
               </dd>
             </div>
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
@@ -113,7 +113,7 @@ export default async function TransTypeDetailPage({ params }: Props) {
                 Deleted At
               </dt>
               <dd className="mt-1 text-sm text-foreground">
-                {transType.deletedAt ? formatDateTimeLong(transType.deletedAt, tz) : "-"}
+                {transType.deletedAt ? formatDateOnly(transType.deletedAt, tz) : "-"}
               </dd>
             </div>
           </dl>

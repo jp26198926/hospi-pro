@@ -40,7 +40,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, Supplier } from "./suppliers-columns";
 import { SupplierFormModal } from "./supplier-form-modal";
 import { SupplierDeleteModal } from "./supplier-delete-modal";
@@ -170,7 +170,7 @@ export function SuppliersTable({ timezone }: { timezone: string }) {
         s.phone || "-",
         s.email || "-",
         s.status,
-        formatDateTime(s.createdAt, timezone),
+        formatDateOnly(s.createdAt, timezone),
       ]),
     });
 
@@ -185,7 +185,7 @@ export function SuppliersTable({ timezone }: { timezone: string }) {
       Phone: s.phone || "-",
       Email: s.email || "-",
       Status: s.status,
-      "Created At": formatDateTime(s.createdAt, timezone),
+      "Created At": formatDateOnly(s.createdAt, timezone),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -296,7 +296,7 @@ export function SuppliersTable({ timezone }: { timezone: string }) {
                 <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                   {supplier.phone && <p><span className="font-medium text-[#666]">Phone:</span> {supplier.phone}</p>}
                   {supplier.email && <p><span className="font-medium text-[#666]">Email:</span> {supplier.email}</p>}
-                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateTime(supplier.createdAt, timezone)}</p>
+                  <p><span className="font-medium text-[#666]">Created:</span> {formatDateOnly(supplier.createdAt, timezone)}</p>
                 </div>
               </div>
               <div className="flex border-t border-[#eee]">

@@ -33,7 +33,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, StockLevel, formatQty } from "./stock-levels-columns";
 import { StockLevelSearchModal } from "./stock-level-search-modal";
 
@@ -147,7 +147,7 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
         item.productName,
         formatQty(item.qty),
         item.locationName || "-",
-        item.updatedAt ? formatDateTime(item.updatedAt, timezone) : "-",
+        item.updatedAt ? formatDateOnly(item.updatedAt, timezone) : "-",
         item.updatedByEmail || "-",
       ]),
     });
@@ -162,7 +162,7 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
       "Product Name": item.productName,
       QTY: Number(item.qty) || 0,
       Location: item.locationName || "-",
-      "Updated At": item.updatedAt ? formatDateTime(item.updatedAt, timezone) : "-",
+      "Updated At": item.updatedAt ? formatDateOnly(item.updatedAt, timezone) : "-",
       "Updated By": item.updatedByEmail || "-",
     }));
 
@@ -290,7 +290,7 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
                   </p>
                   <p>
                     <span className="font-medium text-[#666]">Updated:</span>{" "}
-                    {item.updatedAt ? formatDateTime(item.updatedAt, timezone) : "-"}
+                    {item.updatedAt ? formatDateOnly(item.updatedAt, timezone) : "-"}
                   </p>
                   <p>
                     <span className="font-medium text-[#666]">By:</span>{" "}
