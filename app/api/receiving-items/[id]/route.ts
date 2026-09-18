@@ -133,10 +133,10 @@ export async function DELETE(
       );
     }
 
-    let cancelledReason: string | null = null;
+    let deletedReason: string | null = null;
     try {
       const body = await request.json();
-      if (body?.reason) cancelledReason = String(body.reason);
+      if (body?.reason) deletedReason = String(body.reason);
     } catch {
       // no body
     }
@@ -145,9 +145,9 @@ export async function DELETE(
       .update(receivingItems)
       .set({
         status: "Cancelled",
-        cancelledAt: new Date(),
-        cancelledBy: auth.userId,
-        cancelledReason,
+        deletedAt: new Date(),
+        deletedBy: auth.userId,
+        deletedReason,
       })
       .where(eq(receivingItems.id, itemId));
 
@@ -195,9 +195,9 @@ export async function PATCH(
       .update(receivingItems)
       .set({
         status: "Draft",
-        cancelledAt: null,
-        cancelledBy: null,
-        cancelledReason: null,
+        deletedAt: null,
+        deletedBy: null,
+        deletedReason: null,
         updatedAt: new Date(),
         updatedBy: auth.userId,
       })

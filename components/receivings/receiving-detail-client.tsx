@@ -25,9 +25,12 @@ export interface ReceivingDetail {
   status: ReceivingStatus;
   createdAt: Date | string;
   updatedAt: Date | string | null;
-  cancelledAt: Date | string | null;
-  cancelledReason: string | null;
+  deletedAt: Date | string | null;
+  deletedReason: string | null;
   createdByEmail: string | null;
+  createdByDisplay?: string;
+  updatedByDisplay?: string;
+  deletedByDisplay?: string;
 }
 
 interface ReceivingDetailClientProps {
@@ -258,7 +261,15 @@ export function ReceivingDetailClient({
                     Created By
                   </dt>
                   <dd className="mt-1 text-sm text-foreground">
-                    {receiving.createdByEmail || "-"}
+                    {receiving.createdByDisplay || receiving.createdByEmail || "-"}
+                  </dd>
+                </div>
+                <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
+                  <dt className="text-xs font-semibold uppercase text-muted-foreground">
+                    Updated By
+                  </dt>
+                  <dd className="mt-1 text-sm text-foreground">
+                    {receiving.updatedByDisplay || "-"}
                   </dd>
                 </div>
                 <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
@@ -279,22 +290,30 @@ export function ReceivingDetailClient({
                     </dd>
                   </div>
                 )}
-                {receiving.cancelledAt && (
+                {receiving.deletedAt && (
                   <>
                     <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
                       <dt className="text-xs font-semibold uppercase text-muted-foreground">
-                        Cancelled At
+                        Deleted At
                       </dt>
                       <dd className="mt-1 text-sm text-foreground">
-                        {formatDateOnly(receiving.cancelledAt, timezone)}
+                        {formatDateOnly(receiving.deletedAt, timezone)}
                       </dd>
                     </div>
                     <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
                       <dt className="text-xs font-semibold uppercase text-muted-foreground">
-                        Cancel Reason
+                        Deleted By
                       </dt>
                       <dd className="mt-1 text-sm text-foreground">
-                        {receiving.cancelledReason || "-"}
+                        {receiving.deletedByDisplay || "-"}
+                      </dd>
+                    </div>
+                    <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
+                      <dt className="text-xs font-semibold uppercase text-muted-foreground">
+                        Deleted Reason
+                      </dt>
+                      <dd className="mt-1 text-sm text-foreground">
+                        {receiving.deletedReason || "-"}
                       </dd>
                     </div>
                   </>

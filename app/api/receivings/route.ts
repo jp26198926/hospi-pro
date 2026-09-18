@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { receivings, suppliers, users } from "@/lib/db/schema";
 import { receivingSchema } from "@/lib/validations/receiving";
 import { formatReceivingNo } from "@/lib/validations/receiving-item";
+import { formatUserDisplay } from "@/lib/receivings";
 import { eq, desc, asc, ilike, and, or, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
 
@@ -70,9 +71,11 @@ export async function GET(request: NextRequest) {
           status: receivings.status,
           createdAt: receivings.createdAt,
           updatedAt: receivings.updatedAt,
-          cancelledAt: receivings.cancelledAt,
+          deletedAt: receivings.deletedAt,
           createdBy: receivings.createdBy,
           createdByEmail: users.email,
+          createdByFirstname: users.firstname,
+          createdByLastname: users.lastname,
         })
         .from(receivings)
         .innerJoin(suppliers, eq(receivings.supplierId, suppliers.id))
@@ -94,6 +97,10 @@ export async function GET(request: NextRequest) {
       data: data.map((row) => ({
         ...row,
         transNo: formatReceivingNo(row.id),
+        createdByDisplay: formatUserDisplay(
+          row.createdByFirstname,
+          row.createdByLastname
+        ),
       })),
       total,
       page,

@@ -178,7 +178,7 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
         item.referenceDescription || "-",
         item.remarks || "-",
         formatDateOnly(item.createdAt, timezone),
-        item.createdByEmail || "-",
+        item.createdByDisplay || item.createdByEmail || "-",
       ]),
     });
 
@@ -197,7 +197,7 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
       Reference: item.referenceDescription || "-",
       Remarks: item.remarks || "-",
       "Created At": formatDateOnly(item.createdAt, timezone),
-      "Created By": item.createdByEmail || "-",
+      "Created By": item.createdByDisplay || item.createdByEmail || "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -352,7 +352,7 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
                     </p>
                     <p>
                       <span className="font-medium text-[#666]">By:</span>{" "}
-                      {item.createdByEmail || "-"}
+                      {item.createdByDisplay || item.createdByEmail || "-"}
                     </p>
                   </div>
                 </div>

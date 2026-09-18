@@ -15,6 +15,7 @@ export interface StockLevel {
   updatedAt: Date | null;
   updatedBy: number | null;
   updatedByEmail: string | null;
+  updatedByDisplay?: string;
 }
 
 function formatQty(qty: string | number) {
@@ -128,7 +129,7 @@ export function getColumns({
       ),
     },
     {
-      accessorKey: "updatedByEmail",
+      accessorKey: "updatedByDisplay",
       header: ({ column }) => {
         return (
           <button
@@ -142,7 +143,7 @@ export function getColumns({
       },
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.updatedByEmail || "-"}
+          {row.original.updatedByDisplay || row.original.updatedByEmail || "-"}
         </span>
       ),
     },

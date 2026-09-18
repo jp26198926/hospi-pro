@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { stockMovements, transTypes, products, locations, users } from "@/lib/db/schema";
 import { eq, desc, asc, ilike, and, or, gte, lte, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
+import { formatUserDisplay } from "@/lib/format-user";
 
 export async function GET(request: NextRequest) {
   try {
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
                   : sortBy === "createdAt"
                     ? stockMovements.createdAt
                     : sortBy === "createdBy"
-                      ? users.email
+                      ? users.lastname
                       : stockMovements.date;
 
     const orderFn = sortOrder === "asc" ? asc : desc;
@@ -97,6 +98,8 @@ export async function GET(request: NextRequest) {
           createdAt: stockMovements.createdAt,
           createdBy: stockMovements.createdBy,
           createdByEmail: users.email,
+          createdByFirstname: users.firstname,
+          createdByLastname: users.lastname,
         })
         .from(stockMovements)
         .innerJoin(transTypes, eq(stockMovements.transTypeId, transTypes.id))
@@ -118,7 +121,15 @@ export async function GET(request: NextRequest) {
 
     const total = countResult[0]?.value ?? 0;
 
-    return Response.json({ data, total, page, limit });
+    return Response.json({
+      data: data.map((row) => ({
+        ...row,
+        createdByDisplay: formatUserDisplay(row.createdByFirstname, row.createdByLastname),
+      })),
+      total,
+      page,
+      limit,
+    });
   } catch (error) {
     console.error("GET /api/stock-movements error:", error);
     return Response.json({ error: "Failed to fetch stock movements" }, { status: 500 });

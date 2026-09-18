@@ -243,7 +243,7 @@ export function ReceivingsTable({ timezone }: { timezone: string }) {
                   <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
                     <p>PO: {item.poNumber || "-"}</p>
                     <p>Invoice: {item.invoiceNumber || "-"}</p>
-                    <p>By: {item.createdByEmail || "-"}</p>
+                    <p>By: {item.createdByDisplay || item.createdByEmail || "-"}</p>
                   </div>
                 </div>
                 <div className="flex border-t border-[#eee]">

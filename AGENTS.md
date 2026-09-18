@@ -80,17 +80,17 @@ deletedReason  text                  nullable  set on DELETE from optional reque
 
 Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `payment_methods`, `payment_terms`, `trans_types`, `stock_levels`, `stock_movements`, `receivings`, `receiving_items`, `suppliers`, `products`, `gst_types`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
 
-**`receivings` / `receiving_items`**: document workflow enum `receiving_status` (`Draft` | `Completed` | `Cancelled`) — **not** `commonStatusEnum`. Trans # `RCV-#####` / batch `BATCH-######` derived from ids. Master form first; items on detail. **Mark as Completed** uses `db.transaction` in `lib/receiving-stock.ts`: insert `stock_movements` (+qty), upsert `stock_levels`, update `products.stock`/`lastCost`/`avgCost`. Draft cancel does **not** reverse stock; completed cancel can reverse via same helper. Trans types seeded: `Receiving`, `Receiving Cancel`.
+**`receivings` / `receiving_items`**: document workflow enum `receiving_status` (`Draft` | `Completed` | `Cancelled`) — **not** `commonStatusEnum`. Audit columns use standard **`deleted_at` / `deleted_by` / `deleted_reason`** (renamed from cancelled_*). Trans # `RCV-#####` / batch `BATCH-######` derived from ids. Master form first; items on detail. **Mark as Completed** uses `db.transaction` in `lib/receiving-stock.ts`: insert `stock_movements` (+qty), upsert `stock_levels`, update `products.stock`/`lastCost`/`avgCost`. Draft cancel does **not** reverse stock; completed cancel can reverse via same helper. Trans types seeded: `Receiving`, `Receiving Cancel`. UI Created/Updated/Deleted By use `formatUserDisplay` → `[lastname], [F].`
 
-**`stock_levels` is special**: current qty per product+location (unique `(productId, locationId)`), **no status/soft-delete/createdAt**. UI and APIs are **read-only** (GET list/detail only; no Add/Edit/Delete UI). Future transaction modules upsert rows and set `updatedAt`/`updatedBy`.
+**`stock_levels` is special**: current qty per product+location (unique `(productId, locationId)`), **no status/soft-delete/createdAt**. UI and APIs are **read-only** (GET list/detail only; no Add/Edit/Delete UI). Future transaction modules upsert rows and set `updatedAt`/`updatedBy`. API returns **`updatedByDisplay`** via `formatUserDisplay` (`lib/format-user.ts`).
 
-**`stock_movements` is special**: append-only inventory trail (date, trans type FK, product/location FKs, signed qty, reference ids/description, remarks, `createdAt`/`createdBy`). **No** status/soft-delete. UI/APIs read-only. UI shows Created At/By (not Updated). `reference_trans_id`/`reference_item_id` are plain nullable bigints — **no DB FK** until master-detail modules exist. Future transactions insert here **and** upsert `stock_levels`. Trail DataTable keeps Created At despite wide column count (user-requested).
+**`stock_movements` is special**: append-only inventory trail (date, trans type FK, product/location FKs, signed qty, reference ids/description, remarks, `createdAt`/`createdBy`). **No** status/soft-delete. UI/APIs read-only. UI shows Created At/By (not Updated). API returns **`createdByDisplay`** via `formatUserDisplay`. `reference_trans_id`/`reference_item_id` are plain nullable bigints — **no DB FK** until master-detail modules exist. Future transactions insert here **and** upsert `stock_levels`. Trail DataTable keeps Created At despite wide column count (user-requested).
 
 **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
 
 ## CRUD module pattern
 
-Follow the Departments/Roles module end-to-end. Full step-by-step guide with naming conventions and checklist: `MODULE_CREATION.md`. For required FKs, join display names, editable unique codes, and wide-table Created At omission, use **products** as the reference module.
+Follow the Departments/Roles module end-to-end. Full step-by-step guide with naming conventions and checklist: `MODULE_CREATION.md`. For required FKs, join display names, editable unique codes, and wide-table Created At omission, use **products** as the reference module. For **master-detail documents** (Draft/Completed/Cancelled + items + stock posting), use **receivings** (`roles` detail layout + `lib/receiving-stock.ts` `db.transaction`).
 
 File layout for a new module `<name>`:
 
@@ -137,6 +137,14 @@ Hardcoded hex colors, not Tailwind theme tokens — match these exactly:
 - **`formatDateTime` / `formatDateTimeLong`** — deprecated aliases; prefer `formatDateOnly` in new code.
 - **Date inputs (forms + Advanced Search filters):** must use **`components/ui/date-picker.tsx`** — calendar only, no free typing, no `type="date"`. Props: `value`/`onValueChange` as `""` or `"YYYY-MM-DD"`, `placeholder?`, `id?`, `allowClear?`.
 - Reference: `components/stock-movements/` (format + DatePicker filters).
+
+**User names (Created/Updated/Deleted By)**:
+- Format **`[lastname], [F].`** via **`formatUserDisplay(firstname, lastname)`** from **`@/lib/format-user`** (e.g. `Doe, J.`).
+- APIs should return `*Display` fields (e.g. `createdByDisplay`, `updatedByDisplay`, `deletedByDisplay`) by selecting `users.firstname` + `users.lastname`; email is optional fallback only.
+- Applied on **receivings**, **stock-levels**, **stock-movements** (list, detail, mobile, PDF/Excel). New transaction/inventory modules must follow this — do not show raw email.
+- Detail cards that show audit users (Created/Updated/Deleted By) use the same helper.
+
+**Status filters**: most modules use `Active`/`Deleted`/`all`. **Document modules** (e.g. receivings) use workflow enums like `Draft`/`Completed`/`Cancelled` — list APIs must branch on those values, not Active/Deleted.
 
 **Mobile**: DataTables must transpose to card layout below `md` (`hidden md:block` table + `md:hidden` cards). Toolbars stack with `flex-col gap-3 sm:flex-row`. Copy the pattern from `components/roles/` or `components/departments/`.
 

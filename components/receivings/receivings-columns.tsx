@@ -19,6 +19,7 @@ export interface Receiving {
   status: ReceivingStatus;
   createdAt: Date | string;
   createdByEmail: string | null;
+  createdByDisplay?: string;
 }
 
 export function statusBadge(status: ReceivingStatus) {
@@ -110,11 +111,11 @@ export function getColumns({
       ),
     },
     {
-      accessorKey: "createdByEmail",
+      accessorKey: "createdByDisplay",
       header: "Created By",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.createdByEmail || "-"}
+          {row.original.createdByDisplay || row.original.createdByEmail || "-"}
         </span>
       ),
     },

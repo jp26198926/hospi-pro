@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { stockLevels, products, locations, users } from "@/lib/db/schema";
 import { eq, desc, asc, ilike, and, or, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
+import { formatUserDisplay } from "@/lib/format-user";
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,6 +63,8 @@ export async function GET(request: NextRequest) {
           updatedAt: stockLevels.updatedAt,
           updatedBy: stockLevels.updatedBy,
           updatedByEmail: users.email,
+          updatedByFirstname: users.firstname,
+          updatedByLastname: users.lastname,
         })
         .from(stockLevels)
         .innerJoin(products, eq(stockLevels.productId, products.id))
@@ -81,7 +84,15 @@ export async function GET(request: NextRequest) {
 
     const total = countResult[0]?.value ?? 0;
 
-    return Response.json({ data, total, page, limit });
+    return Response.json({
+      data: data.map((row) => ({
+        ...row,
+        updatedByDisplay: formatUserDisplay(row.updatedByFirstname, row.updatedByLastname),
+      })),
+      total,
+      page,
+      limit,
+    });
   } catch (error) {
     console.error("GET /api/stock-levels error:", error);
     return Response.json({ error: "Failed to fetch stock levels" }, { status: 500 });

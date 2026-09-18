@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { receivings, receivingItems, suppliers, locations, users } from "@/lib/db/schema";
 import { receivingSchema } from "@/lib/validations/receiving";
 import { formatReceivingNo } from "@/lib/validations/receiving-item";
-import { eq, and } from "drizzle-orm";
+import { formatUserDisplay } from "@/lib/receivings";
+import { eq, and, inArray } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
 import { cancelCompletedReceiving } from "@/lib/receiving-stock";
 
@@ -22,17 +23,42 @@ async function loadReceiving(id: number) {
       status: receivings.status,
       createdAt: receivings.createdAt,
       updatedAt: receivings.updatedAt,
-      cancelledAt: receivings.cancelledAt,
-      cancelledReason: receivings.cancelledReason,
+      deletedAt: receivings.deletedAt,
+      deletedReason: receivings.deletedReason,
       createdBy: receivings.createdBy,
-      createdByEmail: users.email,
+      updatedBy: receivings.updatedBy,
+      deletedBy: receivings.deletedBy,
     })
     .from(receivings)
     .innerJoin(suppliers, eq(receivings.supplierId, suppliers.id))
     .innerJoin(locations, eq(receivings.locationId, locations.id))
-    .leftJoin(users, eq(receivings.createdBy, users.id))
     .where(eq(receivings.id, id));
-  return row;
+
+  if (!row) return null;
+
+  const userIds = [row.createdBy, row.updatedBy, row.deletedBy].filter(
+    (v): v is number => typeof v === "number"
+  );
+  const userRows = userIds.length
+    ? await db
+        .select({ id: users.id, firstname: users.firstname, lastname: users.lastname })
+        .from(users)
+        .where(inArray(users.id, userIds))
+    : [];
+  const userMap = new Map(
+    userRows.map((u) => [
+      u.id,
+      formatUserDisplay(u.firstname, u.lastname),
+    ])
+  );
+
+  return {
+    ...row,
+    createdByEmail: null,
+    createdByDisplay: row.createdBy ? userMap.get(row.createdBy) || "-" : "-",
+    updatedByDisplay: row.updatedBy ? userMap.get(row.updatedBy) || "-" : "-",
+    deletedByDisplay: row.deletedBy ? userMap.get(row.deletedBy) || "-" : "-",
+  };
 }
 
 export async function GET(
@@ -145,16 +171,16 @@ export async function DELETE(
       return Response.json({ error: "Receiving is already cancelled" }, { status: 400 });
     }
 
-    let cancelledReason: string | null = null;
+    let deletedReason: string | null = null;
     try {
       const body = await request.json();
-      if (body?.reason) cancelledReason = String(body.reason);
+      if (body?.reason) deletedReason = String(body.reason);
     } catch {
       // no body
     }
 
     if (existing.status === "Completed") {
-      await cancelCompletedReceiving(receivingId, auth.userId, cancelledReason);
+      await cancelCompletedReceiving(receivingId, auth.userId, deletedReason);
       return Response.json({ message: "Receiving cancelled and stock reversed" });
     }
 
@@ -163,9 +189,9 @@ export async function DELETE(
         .update(receivings)
         .set({
           status: "Cancelled",
-          cancelledAt: new Date(),
-          cancelledBy: auth.userId,
-          cancelledReason,
+          deletedAt: new Date(),
+          deletedBy: auth.userId,
+          deletedReason,
         })
         .where(eq(receivings.id, receivingId));
 
@@ -173,9 +199,9 @@ export async function DELETE(
         .update(receivingItems)
         .set({
           status: "Cancelled",
-          cancelledAt: new Date(),
-          cancelledBy: auth.userId,
-          cancelledReason,
+          deletedAt: new Date(),
+          deletedBy: auth.userId,
+          deletedReason,
         })
         .where(
           and(
@@ -226,9 +252,9 @@ export async function PATCH(
         .update(receivings)
         .set({
           status: "Draft",
-          cancelledAt: null,
-          cancelledBy: null,
-          cancelledReason: null,
+          deletedAt: null,
+          deletedBy: null,
+          deletedReason: null,
           updatedAt: new Date(),
           updatedBy: auth.userId,
         })
@@ -238,9 +264,9 @@ export async function PATCH(
         .update(receivingItems)
         .set({
           status: "Draft",
-          cancelledAt: null,
-          cancelledBy: null,
-          cancelledReason: null,
+          deletedAt: null,
+          deletedBy: null,
+          deletedReason: null,
           updatedAt: new Date(),
           updatedBy: auth.userId,
         })

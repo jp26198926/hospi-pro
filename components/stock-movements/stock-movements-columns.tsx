@@ -22,6 +22,7 @@ export interface StockMovement {
   createdAt: Date;
   createdBy: number | null;
   createdByEmail: string | null;
+  createdByDisplay?: string;
 }
 
 export function formatQty(qty: string | number) {
@@ -195,7 +196,7 @@ export function getColumns({
       ),
     },
     {
-      accessorKey: "createdByEmail",
+      accessorKey: "createdByDisplay",
       header: ({ column }) => (
         <button
           className="flex items-center gap-1 text-xs font-semibold uppercase text-[#666] hover:text-[#337ab7]"
@@ -207,7 +208,7 @@ export function getColumns({
       ),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.createdByEmail || "-"}
+          {row.original.createdByDisplay || row.original.createdByEmail || "-"}
         </span>
       ),
     },

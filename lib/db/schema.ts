@@ -145,11 +145,11 @@ export const receivings = pgTable("receivings", {
   status: receivingStatusEnum("status").notNull().default("Draft"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
-  cancelledAt: timestamp("cancelled_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
   createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
   updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
-  cancelledBy: bigint("cancelled_by", { mode: "number" }).references((): AnyPgColumn => users.id),
-  cancelledReason: text("cancelled_reason"),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
 });
 
 export const receivingItems = pgTable("receiving_items", {
@@ -168,11 +168,11 @@ export const receivingItems = pgTable("receiving_items", {
   status: receivingStatusEnum("status").notNull().default("Draft"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
-  cancelledAt: timestamp("cancelled_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
   createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
   updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
-  cancelledBy: bigint("cancelled_by", { mode: "number" }).references((): AnyPgColumn => users.id),
-  cancelledReason: text("cancelled_reason"),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
 });
 
 export const suppliers = pgTable("suppliers", {

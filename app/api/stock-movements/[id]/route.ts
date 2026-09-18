@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { stockMovements, transTypes, products, locations, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
+import { formatUserDisplay } from "@/lib/format-user";
 
 export async function GET(
   request: NextRequest,
@@ -38,6 +39,8 @@ export async function GET(
         createdAt: stockMovements.createdAt,
         createdBy: stockMovements.createdBy,
         createdByEmail: users.email,
+        createdByFirstname: users.firstname,
+        createdByLastname: users.lastname,
       })
       .from(stockMovements)
       .innerJoin(transTypes, eq(stockMovements.transTypeId, transTypes.id))
@@ -50,7 +53,15 @@ export async function GET(
       return Response.json({ error: "Stock movement not found" }, { status: 404 });
     }
 
-    return Response.json({ data });
+    return Response.json({
+      data: {
+        ...data,
+        createdByDisplay: formatUserDisplay(
+          data.createdByFirstname,
+          data.createdByLastname
+        ),
+      },
+    });
   } catch (error) {
     console.error("GET /api/stock-movements/[id] error:", error);
     return Response.json({ error: "Failed to fetch stock movement" }, { status: 500 });

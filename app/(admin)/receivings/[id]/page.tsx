@@ -5,10 +5,11 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { receivings, suppliers, locations, users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { getAppTimezone } from "@/lib/settings";
 import { requirePageRead } from "@/lib/api-auth";
 import { formatReceivingNo } from "@/lib/validations/receiving-item";
+import { formatUserDisplay } from "@/lib/receivings";
 import { ReceivingDetailClient } from "@/components/receivings/receiving-detail-client";
 
 interface Props {
@@ -48,17 +49,31 @@ export default async function ReceivingDetailPage({ params }: Props) {
       status: receivings.status,
       createdAt: receivings.createdAt,
       updatedAt: receivings.updatedAt,
-      cancelledAt: receivings.cancelledAt,
-      cancelledReason: receivings.cancelledReason,
-      createdByEmail: users.email,
+      deletedAt: receivings.deletedAt,
+      deletedReason: receivings.deletedReason,
+      createdBy: receivings.createdBy,
+      updatedBy: receivings.updatedBy,
+      deletedBy: receivings.deletedBy,
     })
     .from(receivings)
     .innerJoin(suppliers, eq(receivings.supplierId, suppliers.id))
     .innerJoin(locations, eq(receivings.locationId, locations.id))
-    .leftJoin(users, eq(receivings.createdBy, users.id))
     .where(eq(receivings.id, receivingId));
 
   if (!row) notFound();
+
+  const userIds = [row.createdBy, row.updatedBy, row.deletedBy].filter(
+    (v): v is number => typeof v === "number"
+  );
+  const userRows = userIds.length
+    ? await db
+        .select({ id: users.id, firstname: users.firstname, lastname: users.lastname })
+        .from(users)
+        .where(inArray(users.id, userIds))
+    : [];
+  const userMap = new Map(
+    userRows.map((u) => [u.id, formatUserDisplay(u.firstname, u.lastname)])
+  );
 
   const timezone = await getAppTimezone();
 
@@ -73,7 +88,14 @@ export default async function ReceivingDetailPage({ params }: Props) {
         </Link>
       </div>
       <ReceivingDetailClient
-        initial={{ ...row, transNo: formatReceivingNo(row.id) }}
+        initial={{
+          ...row,
+          createdByEmail: null,
+          createdByDisplay: row.createdBy ? userMap.get(row.createdBy) || "-" : "-",
+          updatedByDisplay: row.updatedBy ? userMap.get(row.updatedBy) || "-" : "-",
+          deletedByDisplay: row.deletedBy ? userMap.get(row.deletedBy) || "-" : "-",
+          transNo: formatReceivingNo(row.id),
+        }}
         timezone={timezone}
       />
     </div>

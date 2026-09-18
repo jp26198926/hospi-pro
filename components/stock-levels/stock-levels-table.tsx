@@ -148,7 +148,7 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
         formatQty(item.qty),
         item.locationName || "-",
         item.updatedAt ? formatDateOnly(item.updatedAt, timezone) : "-",
-        item.updatedByEmail || "-",
+        item.updatedByDisplay || item.updatedByEmail || "-",
       ]),
     });
 
@@ -163,7 +163,7 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
       QTY: Number(item.qty) || 0,
       Location: item.locationName || "-",
       "Updated At": item.updatedAt ? formatDateOnly(item.updatedAt, timezone) : "-",
-      "Updated By": item.updatedByEmail || "-",
+      "Updated By": item.updatedByDisplay || item.updatedByEmail || "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -294,7 +294,7 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
                   </p>
                   <p>
                     <span className="font-medium text-[#666]">By:</span>{" "}
-                    {item.updatedByEmail || "-"}
+                    {item.updatedByDisplay || item.updatedByEmail || "-"}
                   </p>
                 </div>
               </div>

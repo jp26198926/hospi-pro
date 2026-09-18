@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { stockLevels, products, locations, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
+import { formatUserDisplay } from "@/lib/format-user";
 
 export async function GET(
   request: NextRequest,
@@ -31,6 +32,8 @@ export async function GET(
         updatedAt: stockLevels.updatedAt,
         updatedBy: stockLevels.updatedBy,
         updatedByEmail: users.email,
+        updatedByFirstname: users.firstname,
+        updatedByLastname: users.lastname,
       })
       .from(stockLevels)
       .innerJoin(products, eq(stockLevels.productId, products.id))
@@ -42,7 +45,15 @@ export async function GET(
       return Response.json({ error: "Stock level not found" }, { status: 404 });
     }
 
-    return Response.json({ data });
+    return Response.json({
+      data: {
+        ...data,
+        updatedByDisplay: formatUserDisplay(
+          data.updatedByFirstname,
+          data.updatedByLastname
+        ),
+      },
+    });
   } catch (error) {
     console.error("GET /api/stock-levels/[id] error:", error);
     return Response.json({ error: "Failed to fetch stock level" }, { status: 500 });

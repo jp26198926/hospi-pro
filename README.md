@@ -16,16 +16,17 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Trans Type management (unique name, transaction type lookup)
 - Stock Level (read-only current qty per product and location; filled by future transaction modules)
 - Stock Movement (read-only inventory trail: trans type, qty +/-, reference, remarks)
-- Receivings (Draft/Completed/Cancelled goods receiving with items; complete posts stock_levels + stock_movements + product costs)
+- Receivings (Draft/Completed/Cancelled goods receiving; items on detail; Mark as Completed posts stock_levels + stock_movements + product costs; Print PDF when Completed)
 - GST Types management
 - Suppliers management (with audit trail)
 - Products management (editable product codes with optional next-code prefill, required UOM + GST type FKs, optional category, stock/cost tracking)
 - Multi-currency support (155 ISO 4217 currencies)
 - Timezone-aware date display — **all dates shown as `YYYY-MM-DD`** (app timezone); date form/filter fields use a calendar **DatePicker** (`YYYY-MM-DD`, no manual typing)
+- User display on inventory/receivings — **Created/Updated/Deleted By** shown as **`[lastname], [F].`** (`lib/format-user.ts` / `formatUserDisplay`)
 - File upload with configurable storage (File System / Cloudinary)
 - Application settings (logo, favicon, name, timezone, currency, storage type)
 - Password management (change password, forgot/reset flow)
-- **Audit fields** on all modules — createdBy, updatedBy, deletedBy, deletedReason
+- **Audit fields** on all modules — createdBy, updatedBy, deletedBy, deletedReason (receivings use the same `deleted_*` columns; workflow status may be Draft/Completed/Cancelled)
 
 ## Tech Stack
 
@@ -155,10 +156,13 @@ lib/
 ├── api-client.ts         # apiFetch wrapper (attaches Bearer token)
 ├── auth.ts               # JWT generation/verification, bcrypt helpers
 ├── datetime.ts           # Pure date formatting — formatDateOnly → YYYY-MM-DD (no db imports)
+├── format-user.ts        # formatUserDisplay → [lastname], [F]. (e.g. Doe, J.)
 ├── db/
 │   ├── index.ts          # Drizzle database client
 │   └── schema.ts         # All table schemas
 ├── permissions.ts        # Cached RBAC permission lookups (30s TTL)
+├── receiving-stock.ts    # Receivings complete/cancel stock posting (db.transaction)
+├── receivings.ts         # Trans #/batch helpers, re-export formatUserDisplay
 ├── settings.ts           # Cached app settings + getAppTimezone()
 ├── utils.ts              # cn() utility for classnames
 └── validations/          # Zod schemas per module
@@ -243,7 +247,7 @@ The app logo, favicon, name, and storage type are all configurable from `/settin
 See **`MODULE_CREATION.md`** for the full step-by-step guide with naming conventions, code templates, and checklist.
 
 Quick overview:
-1. Add table to `lib/db/schema.ts` — use `bigserial("id", { mode: "number" })` for PKs, `bigint("col", { mode: "number" })` for FKs, `timestamp({ withTimezone: true, mode: "date" })` for timestamps. Include audit fields (createdBy, updatedBy, deletedBy, deletedReason).
+1. Add table to `lib/db/schema.ts` — use `bigserial("id", { mode: "number" })` for PKs, `bigint("col", { mode: "number" })` for FKs, `timestamp({ withTimezone: true, mode: "date" })` for timestamps. Include audit fields (createdBy, updatedBy, deletedBy, deletedReason). Display dates with `formatDateOnly`; user audit fields in UI with `formatUserDisplay`; date inputs with `DatePicker`.
 2. Create `lib/validations/<singular>.ts` (zod schemas)
 3. Create `app/api/<plural>/route.ts` + `[id]/route.ts` (with `requirePermission` calls, set audit fields from `auth.userId`)
 4. Create `components/<plural>/` (columns, table, form modal, delete modal, search modal)

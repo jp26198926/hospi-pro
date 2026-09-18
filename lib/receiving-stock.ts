@@ -134,7 +134,7 @@ export async function completeReceiving(receivingId: number, userId: number) {
 export async function cancelCompletedReceiving(
   receivingId: number,
   userId: number,
-  cancelledReason: string | null
+  deletedReason: string | null
 ) {
   const cancelTypeId = await getTransTypeIdByName("Receiving Cancel");
   return db.transaction(async (tx) => {
@@ -171,7 +171,7 @@ export async function cancelCompletedReceiving(
         referenceTransId: master.id,
         referenceItemId: item.id,
         referenceDescription: receivingRef(master.id, item.id),
-        remarks: cancelledReason || "Receiving cancelled",
+        remarks: deletedReason || "Receiving cancelled",
         createdBy: userId,
       });
 
@@ -223,9 +223,9 @@ export async function cancelCompletedReceiving(
         .update(receivingItems)
         .set({
           status: "Cancelled",
-          cancelledAt: new Date(),
-          cancelledBy: userId,
-          cancelledReason,
+          deletedAt: new Date(),
+          deletedBy: userId,
+          deletedReason,
           updatedAt: new Date(),
           updatedBy: userId,
         })
@@ -236,9 +236,9 @@ export async function cancelCompletedReceiving(
       .update(receivings)
       .set({
         status: "Cancelled",
-        cancelledAt: new Date(),
-        cancelledBy: userId,
-        cancelledReason,
+        deletedAt: new Date(),
+        deletedBy: userId,
+        deletedReason,
       })
       .where(eq(receivings.id, receivingId));
   });

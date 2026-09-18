@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
           status: receivingItems.status,
           createdAt: receivingItems.createdAt,
           updatedAt: receivingItems.updatedAt,
-          cancelledAt: receivingItems.cancelledAt,
+          deletedAt: receivingItems.deletedAt,
         })
         .from(receivingItems)
         .innerJoin(products, eq(receivingItems.productId, products.id))

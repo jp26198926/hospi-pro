@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { transTypes } from "@/lib/db/schema";
 import { formatReceivingNo, formatBatchNo } from "@/lib/validations/receiving-item";
 
+export { formatUserDisplay } from "@/lib/format-user";
+
 export async function getTransTypeIdByName(name: string): Promise<number> {
   const [row] = await db
     .select({ id: transTypes.id })
