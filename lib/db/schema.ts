@@ -84,6 +84,27 @@ export const transTypes = pgTable("trans_types", {
   deletedReason: text("deleted_reason"),
 });
 
+export const stockLevels = pgTable(
+  "stock_levels",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    productId: bigint("product_id", { mode: "number" })
+      .notNull()
+      .references(() => products.id),
+    locationId: bigint("location_id", { mode: "number" })
+      .notNull()
+      .references(() => locations.id),
+    qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).defaultNow(),
+    updatedBy: bigint("updated_by", { mode: "number" }).references(
+      (): AnyPgColumn => users.id
+    ),
+  },
+  (t) => [
+    uniqueIndex("stock_levels_product_location_idx").on(t.productId, t.locationId),
+  ]
+);
+
 export const suppliers = pgTable("suppliers", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   name: text("name").notNull().unique(),
