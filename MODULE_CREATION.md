@@ -2,7 +2,7 @@
 
 How to add a new CRUD module to this RBAC app. Follow the steps in order.
 
-**Reference modules**: `departments` (simple), `roles` (has clone modal + detail page with a child table), `products` (wide table, required FKs `uomId`/`gstTypeId`, editable unique code + next-code prefill, Created At omitted), `payment_methods` (simple text module with **dual unique fields** `name` + `description`, audit fields, Created At shown), `payment_terms` (unique `name` + integer `termDays` default 0 via `z.coerce.number()`, audit fields), `trans_types` (simplest lookup: unique `name` + status + audit fields), `stock_levels` (**read-only** join view: unique product+location qty, GET APIs only, no form/delete UI).
+**Reference modules**: `departments` (simple), `roles` (has clone modal + detail page with a child table), `products` (wide table, required FKs `uomId`/`gstTypeId`, editable unique code + next-code prefill, Created At omitted), `payment_methods` (simple text module with **dual unique fields** `name` + `description`, audit fields, Created At shown), `payment_terms` (unique `name` + integer `termDays` default 0 via `z.coerce.number()`, audit fields), `trans_types` (simplest lookup: unique `name` + status + audit fields), `stock_levels` (**read-only** join view: unique product+location qty, GET APIs only, no form/delete UI), `stock_movements` (**read-only** signed-qty trail with FK joins + reference/remarks; no write UI).
 
 ---
 

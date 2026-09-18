@@ -105,6 +105,29 @@ export const stockLevels = pgTable(
   ]
 );
 
+export const stockMovements = pgTable("stock_movements", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  date: timestamp("date", { withTimezone: true, mode: "date" }).notNull(),
+  transTypeId: bigint("trans_type_id", { mode: "number" })
+    .notNull()
+    .references(() => transTypes.id),
+  productId: bigint("product_id", { mode: "number" })
+    .notNull()
+    .references(() => products.id),
+  locationId: bigint("location_id", { mode: "number" })
+    .notNull()
+    .references(() => locations.id),
+  qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
+  referenceTransId: bigint("reference_trans_id", { mode: "number" }),
+  referenceItemId: bigint("reference_item_id", { mode: "number" }),
+  referenceDescription: text("reference_description"),
+  remarks: text("remarks"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  createdBy: bigint("created_by", { mode: "number" }).references(
+    (): AnyPgColumn => users.id
+  ),
+});
+
 export const suppliers = pgTable("suppliers", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   name: text("name").notNull().unique(),

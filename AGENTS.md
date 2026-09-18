@@ -78,9 +78,11 @@ deletedReason  text                  nullable  set on DELETE from optional reque
 
 **Schema conventions**: All table IDs use `bigserial("id", { mode: "number" }).primaryKey()` and all FK columns use `bigint("col", { mode: "number" }).references(...)` — the `mode: "number"` ensures Drizzle returns JS `number` (not BigInt). Non-FK numeric columns (e.g. `pages.order`, `settingsMail.smtpPort`) stay as `integer`.
 
-Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `payment_methods`, `payment_terms`, `trans_types`, `stock_levels`, `suppliers`, `products`, `gst_types`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
+Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `payment_methods`, `payment_terms`, `trans_types`, `stock_levels`, `stock_movements`, `suppliers`, `products`, `gst_types`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
 
 **`stock_levels` is special**: current qty per product+location (unique `(productId, locationId)`), **no status/soft-delete/createdAt**. UI and APIs are **read-only** (GET list/detail only; no Add/Edit/Delete UI). Future transaction modules upsert rows and set `updatedAt`/`updatedBy`.
+
+**`stock_movements` is special**: append-only inventory trail (date, trans type FK, product/location FKs, signed qty, reference ids/description, remarks, `createdAt`/`createdBy`). **No** status/soft-delete. UI/APIs read-only. UI shows Created At/By (not Updated). `reference_trans_id`/`reference_item_id` are plain nullable bigints — **no DB FK** until master-detail modules exist. Future transactions insert here **and** upsert `stock_levels`. Trail DataTable keeps Created At despite wide column count (user-requested).
 
 **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
 
