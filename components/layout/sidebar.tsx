@@ -29,6 +29,7 @@ import {
   MapPin,
   ShoppingCart,
   CreditCard,
+  Truck,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
@@ -65,6 +66,7 @@ const iconMap: Record<string, LucideIcon> = {
   "map-pin": MapPin,
   "shopping-cart": ShoppingCart,
   "credit-card": CreditCard,
+  truck: Truck,
 };
 
 interface PageItem {

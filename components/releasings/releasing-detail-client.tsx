@@ -4,10 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { formatDateOnly } from "@/lib/datetime";
-import { statusBadge, type ReceivingStatus } from "./receivings-columns";
-import { ReceivingFormModal } from "./receiving-form-modal";
-import { ReceivingActionModal } from "./receiving-action-modal";
-import { ReceivingItemsTable } from "@/components/receiving-items/receiving-items-table";
+import { fmtPrintNum, printDocumentPdf } from "@/lib/print/document-print";
+import { statusBadge, type ReleasingStatus } from "./releasings-columns";
+import { ReleasingFormModal } from "./releasing-form-modal";
+import { ReleasingActionModal } from "./releasing-action-modal";
+import { ReleasingItemsTable } from "@/components/releasing-items/releasing-items-table";
+import { ReleasingScanBar } from "./releasing-scan-bar";
 import {
   Pencil,
   CheckCircle2,
@@ -16,63 +18,56 @@ import {
   RotateCcw,
   ArrowLeft,
 } from "lucide-react";
-import {
-  fmtPrintNum,
-  printDocumentPdf,
-} from "@/lib/print/document-print";
 
-export interface ReceivingDetail {
+export interface ReleasingDetail {
   id: number;
   transNo: string;
   date: Date | string;
-  supplierId: number;
-  supplierName: string;
-  locationId: number;
-  locationName: string | null;
-  poNumber: string | null;
-  invoiceNumber: string | null;
+  fromLocationId: number;
+  fromLocationName: string;
+  toLocationId: number | null;
+  toLocationName: string | null;
+  receiverName: string;
   remarks: string | null;
-  status: ReceivingStatus;
+  status: ReleasingStatus;
   createdAt: Date | string;
   updatedAt: Date | string | null;
   deletedAt: Date | string | null;
   deletedReason: string | null;
-  createdByEmail: string | null;
   createdByDisplay?: string;
   updatedByDisplay?: string;
   deletedByDisplay?: string;
 }
 
-interface ReceivingDetailClientProps {
-  initial: ReceivingDetail;
+interface ReleasingDetailClientProps {
+  initial: ReleasingDetail;
   timezone: string;
   appSettings?: {
     appName: string;
     appLogo: string | null;
     address: string | null;
     phone: string | null;
-    appTagline: string | null;
   };
 }
 
-export function ReceivingDetailClient({
+export function ReleasingDetailClient({
   initial,
   timezone,
   appSettings,
-}: ReceivingDetailClientProps) {
-  const [receiving, setReceiving] = useState(initial);
+}: ReleasingDetailClientProps) {
+  const [releasing, setReleasing] = useState(initial);
+  const [itemsReloadKey, setItemsReloadKey] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
   const [actionOpen, setActionOpen] = useState(false);
   const [action, setAction] = useState<"complete" | "cancel" | "restore">(
-    "complete",
+    "complete"
   );
-  const [itemsReloadKey, setItemsReloadKey] = useState(0);
 
   const refresh = async () => {
     try {
-      const res = await fetch(`/api/receivings/${receiving.id}`);
+      const res = await fetch(`/api/releasings/${releasing.id}`);
       const json = await res.json();
-      if (res.ok) setReceiving(json.data);
+      if (res.ok) setReleasing(json.data);
     } catch {
       // ignore
     }
@@ -82,7 +77,7 @@ export function ReceivingDetailClient({
   const handlePrint = async () => {
     try {
       const res = await fetch(
-        `/api/receiving-items?receivingId=${receiving.id}&limit=100&sortBy=id&sortOrder=asc`
+        `/api/releasing-items?releasingId=${releasing.id}&limit=100&sortBy=id&sortOrder=asc`
       );
       const json = await res.json();
       const items = res.ok
@@ -93,42 +88,37 @@ export function ReceivingDetailClient({
 
       await printDocumentPdf({
         appSettings,
-        documentNo: receiving.transNo,
-        documentNoLabel: "Receiving No.",
-        title: "RECEIVING",
+        documentNo: releasing.transNo,
+        documentNoLabel: "Releasing No.",
+        title: "RELEASING",
         fieldsLeft: [
-          { label: "Date", value: formatDateOnly(receiving.date, timezone) },
-          { label: "Supplier", value: receiving.supplierName },
-          { label: "PO Number", value: receiving.poNumber || "-" },
+          { label: "Date", value: formatDateOnly(releasing.date, timezone) },
+          { label: "From Location", value: releasing.fromLocationName },
+          { label: "To Location", value: releasing.toLocationName || "-" },
         ],
         fieldsRight: [
-          { label: "Status", badge: receiving.status },
-          { label: "Invoice No", value: receiving.invoiceNumber || "-" },
-          { label: "Location", value: receiving.locationName || "-" },
+          { label: "Status", badge: releasing.status },
+          { label: "Receiver", value: releasing.receiverName },
         ],
-        sectionTitle: "Received Items",
+        sectionTitle: "Released Items",
         tableColumns: [
           { key: "no", header: "NO", align: "center", width: 9 },
-          { key: "series", header: "BATCH #", align: "center", width: 22 },
+          { key: "series", header: "SERIES #", align: "center", width: 24 },
           { key: "desc", header: "ITEM DESCRIPTION", align: "left" },
-          { key: "qty", header: "QTY", align: "right", width: 18 },
-          { key: "uom", header: "UOM", align: "left", width: 14 },
-          { key: "unit", header: "UNIT PRICE", align: "right", width: 20 },
-          { key: "total", header: "TOTAL COST", align: "right", width: 20 },
-          { key: "remarks", header: "REMARKS", align: "left", width: 20 },
+          { key: "qty", header: "QTY", align: "right", width: 20 },
+          { key: "uom", header: "UOM", align: "left", width: 16 },
+          { key: "remarks", header: "REMARKS", align: "left", width: 24 },
           { key: "status", header: "STATUS", align: "center", width: 20 },
         ],
         tableRows: items.map(
           (
             item: {
               id: number;
-              batchNo?: string;
+              seriesNo?: string;
               productCode: string;
               productName: string;
               uomName?: string | null;
               qty: string;
-              unitCost: string;
-              totalCost: string;
               remarks: string | null;
               status: string;
             },
@@ -136,24 +126,22 @@ export function ReceivingDetailClient({
           ) => ({
             no: String(i + 1),
             series:
-              item.batchNo || `BATCH-${String(item.id).padStart(6, "0")}`,
+              item.seriesNo || `RI-${String(item.id).padStart(6, "0")}`,
             desc: `${item.productCode} - ${item.productName}`,
             qty: fmtPrintNum(item.qty),
             uom: item.uomName || "-",
-            unit: fmtPrintNum(item.unitCost),
-            total: fmtPrintNum(item.totalCost),
             remarks: item.remarks || "",
             status: String(item.status).toUpperCase(),
           })
         ),
-        remarks: receiving.remarks,
-        leftSignatureLabel: "Received By:",
-        leftSignatureName: receiving.createdByDisplay,
+        remarks: releasing.remarks,
+        leftSignatureLabel: "Released By:",
+        leftSignatureName: releasing.createdByDisplay,
         leftSignatureCaption: "Staff Signature",
         rightSignatureLabel: "Verified By:",
         rightSignatureCaption: "Authorized Signature",
         timezone,
-        fileName: `${receiving.transNo}.pdf`,
+        fileName: `${releasing.transNo}.pdf`,
       });
     } catch (error) {
       console.error("Print failed:", error);
@@ -165,20 +153,20 @@ export function ReceivingDetailClient({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-[#337ab7]">
-            Receiving {receiving.transNo}
+            Releasing {releasing.transNo}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Goods receiving transaction details.
+            Stock releasing transaction details.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/receivings">
+          <Link href="/releasings">
             <Button variant="outline" size="sm" className="border-[#ccc]">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
           </Link>
-          {receiving.status === "Draft" && (
+          {releasing.status === "Draft" && (
             <>
               <Button
                 variant="outline"
@@ -213,7 +201,7 @@ export function ReceivingDetailClient({
               </Button>
             </>
           )}
-          {receiving.status === "Completed" && (
+          {releasing.status === "Completed" && (
             <Button
               size="sm"
               onClick={handlePrint}
@@ -223,7 +211,7 @@ export function ReceivingDetailClient({
               Print
             </Button>
           )}
-          {receiving.status === "Cancelled" && (
+          {releasing.status === "Cancelled" && (
             <Button
               size="sm"
               onClick={() => {
@@ -244,13 +232,20 @@ export function ReceivingDetailClient({
           <div className="rounded-sm border border-[#ddd] bg-white shadow-sm">
             <div className="border-b border-[#ddd] bg-[#f8f8f8] px-4 py-3">
               <h2 className="text-sm font-semibold text-[#337ab7]">
-                Receiving Items
+                Releasing Items
               </h2>
             </div>
-            <div className="p-4">
-              <ReceivingItemsTable
-                receivingId={receiving.id}
-                masterStatus={receiving.status}
+            <div className="space-y-4 p-4">
+              {releasing.status === "Draft" && (
+                <ReleasingScanBar
+                  releasingId={releasing.id}
+                  fromLocationId={releasing.fromLocationId}
+                  onSuccess={() => setItemsReloadKey((k) => k + 1)}
+                />
+              )}
+              <ReleasingItemsTable
+                releasingId={releasing.id}
+                masterStatus={releasing.status}
                 timezone={timezone}
                 onMutated={refresh}
                 reloadKey={itemsReloadKey}
@@ -263,25 +258,21 @@ export function ReceivingDetailClient({
           <div className="rounded-sm border border-[#ddd] bg-white shadow-sm">
             <div className="border-b border-[#ddd] bg-[#f8f8f8] px-4 py-3">
               <h2 className="text-sm font-semibold text-[#337ab7]">
-                Receiving Information
+                Releasing Information
               </h2>
             </div>
             <div className="p-6">
               <dl className="space-y-4">
                 {[
-                  { label: "Trans #", value: receiving.transNo, accent: true },
+                  { label: "Trans #", value: releasing.transNo, accent: true },
                   {
                     label: "Date",
-                    value: formatDateOnly(receiving.date, timezone),
+                    value: formatDateOnly(releasing.date, timezone),
                   },
-                  { label: "Supplier", value: receiving.supplierName },
-                  { label: "Location", value: receiving.locationName || "-" },
-                  { label: "PO No.", value: receiving.poNumber || "-" },
-                  {
-                    label: "Invoice No.",
-                    value: receiving.invoiceNumber || "-",
-                  },
-                  { label: "Remarks", value: receiving.remarks || "-" },
+                  { label: "From Location", value: releasing.fromLocationName },
+                  { label: "To Location", value: releasing.toLocationName || "-" },
+                  { label: "Receiver", value: releasing.receiverName },
+                  { label: "Remarks", value: releasing.remarks || "-" },
                 ].map((f) => (
                   <div
                     key={f.label}
@@ -307,9 +298,9 @@ export function ReceivingDetailClient({
                   </dt>
                   <dd className="mt-1">
                     <span
-                      className={`inline-block px-2 py-0.5 text-xs font-medium ${statusBadge(receiving.status)}`}
+                      className={`inline-block px-2 py-0.5 text-xs font-medium ${statusBadge(releasing.status)}`}
                     >
-                      {receiving.status}
+                      {releasing.status}
                     </span>
                   </dd>
                 </div>
@@ -318,17 +309,7 @@ export function ReceivingDetailClient({
                     Created By
                   </dt>
                   <dd className="mt-1 text-sm text-foreground">
-                    {receiving.createdByDisplay ||
-                      receiving.createdByEmail ||
-                      "-"}
-                  </dd>
-                </div>
-                <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
-                  <dt className="text-xs font-semibold uppercase text-muted-foreground">
-                    Updated By
-                  </dt>
-                  <dd className="mt-1 text-sm text-foreground">
-                    {receiving.updatedByDisplay || "-"}
+                    {releasing.createdByDisplay || "-"}
                   </dd>
                 </div>
                 <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
@@ -336,46 +317,19 @@ export function ReceivingDetailClient({
                     Created At
                   </dt>
                   <dd className="mt-1 text-sm text-foreground">
-                    {formatDateOnly(receiving.createdAt, timezone)}
+                    {formatDateOnly(releasing.createdAt, timezone)}
                   </dd>
                 </div>
-                {receiving.updatedAt && (
+                {releasing.deletedAt && (
                   <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
                     <dt className="text-xs font-semibold uppercase text-muted-foreground">
-                      Updated At
+                      Deleted At / By
                     </dt>
                     <dd className="mt-1 text-sm text-foreground">
-                      {formatDateOnly(receiving.updatedAt, timezone)}
+                      {formatDateOnly(releasing.deletedAt, timezone)} ·{" "}
+                      {releasing.deletedByDisplay || "-"}
                     </dd>
                   </div>
-                )}
-                {receiving.deletedAt && (
-                  <>
-                    <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
-                      <dt className="text-xs font-semibold uppercase text-muted-foreground">
-                        Deleted At
-                      </dt>
-                      <dd className="mt-1 text-sm text-foreground">
-                        {formatDateOnly(receiving.deletedAt, timezone)}
-                      </dd>
-                    </div>
-                    <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
-                      <dt className="text-xs font-semibold uppercase text-muted-foreground">
-                        Deleted By
-                      </dt>
-                      <dd className="mt-1 text-sm text-foreground">
-                        {receiving.deletedByDisplay || "-"}
-                      </dd>
-                    </div>
-                    <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-4">
-                      <dt className="text-xs font-semibold uppercase text-muted-foreground">
-                        Deleted Reason
-                      </dt>
-                      <dd className="mt-1 text-sm text-foreground">
-                        {receiving.deletedReason || "-"}
-                      </dd>
-                    </div>
-                  </>
                 )}
               </dl>
             </div>
@@ -383,18 +337,18 @@ export function ReceivingDetailClient({
         </div>
       </div>
 
-      <ReceivingFormModal
+      <ReleasingFormModal
         open={editOpen}
         onOpenChange={setEditOpen}
         mode="edit"
-        receiving={receiving}
+        releasing={releasing}
         onSuccess={refresh}
       />
-      <ReceivingActionModal
+      <ReleasingActionModal
         open={actionOpen}
         onOpenChange={setActionOpen}
         action={action}
-        receiving={receiving}
+        releasing={releasing}
         onSuccess={refresh}
       />
     </div>

@@ -4,7 +4,7 @@ export const commonStatusEnum = pgEnum("status_common", ["Active", "Deleted"]);
 
 export const categoryTypeEnum = pgEnum("category_type", ["inventoriable", "consumable"]);
 
-export const receivingStatusEnum = pgEnum("receiving_status", ["Draft", "Completed", "Cancelled"]);
+export const inventoryStatusEnum = pgEnum("inventory_status", ["Draft", "Completed", "Cancelled"]);
 
 export const departments = pgTable("departments", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
@@ -142,7 +142,7 @@ export const receivings = pgTable("receivings", {
   poNumber: text("po_number"),
   invoiceNumber: text("invoice_number"),
   remarks: text("remarks"),
-  status: receivingStatusEnum("status").notNull().default("Draft"),
+  status: inventoryStatusEnum("status").notNull().default("Draft"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
@@ -165,7 +165,49 @@ export const receivingItems = pgTable("receiving_items", {
   totalCost: decimal("total_cost", { precision: 10, scale: 4 }).notNull().default("0"),
   dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
   remarks: text("remarks"),
-  status: receivingStatusEnum("status").notNull().default("Draft"),
+  status: inventoryStatusEnum("status").notNull().default("Draft"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
+export const releasings = pgTable("releasings", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  date: timestamp("date", { withTimezone: true, mode: "date" }).notNull(),
+  fromLocationId: bigint("from_location_id", { mode: "number" })
+    .notNull()
+    .references(() => locations.id),
+  toLocationId: bigint("to_location_id", { mode: "number" }).references(
+    () => locations.id
+  ),
+  receiverName: text("receiver_name").notNull(),
+  remarks: text("remarks"),
+  status: inventoryStatusEnum("status").notNull().default("Draft"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
+export const releasingItems = pgTable("releasing_items", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  releasingId: bigint("releasing_id", { mode: "number" })
+    .notNull()
+    .references(() => releasings.id),
+  productId: bigint("product_id", { mode: "number" })
+    .notNull()
+    .references(() => products.id),
+  qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
+  dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
+  remarks: text("remarks"),
+  status: inventoryStatusEnum("status").notNull().default("Draft"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),

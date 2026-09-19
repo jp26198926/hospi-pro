@@ -16,7 +16,8 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Trans Type management (unique name, transaction type lookup)
 - Stock Level (read-only current qty per product and location; filled by future transaction modules)
 - Stock Movement (read-only inventory trail: trans type, qty +/-, reference, remarks)
-- Receivings (Draft/Completed/Cancelled goods receiving; items on detail; Mark as Completed posts stock_levels + stock_movements + product costs; **list defaults to Draft**; **Print** PDF uses app name/logo + branded layout in `receiving-detail-client.tsx`)
+- Receivings (Draft/Completed/Cancelled goods receiving; items on detail; Mark as Completed posts stock_levels + stock_movements + product costs; **list defaults to Draft**; **Print** uses shared **`lib/print/document-print.ts`** with app branding)
+- Releasings (Draft/Completed/Cancelled stock release from location; items + **barcode scan auto-add** (`5*CODE`); complete decrements stock; list defaults to Draft; **same print layout** via `printDocumentPdf`)
 - GST Types management
 - Suppliers management (with audit trail)
 - Products management (editable product codes with optional next-code prefill, required UOM + GST type FKs, optional category, stock/cost tracking)
@@ -24,7 +25,8 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Timezone-aware date display — **all dates shown as `YYYY-MM-DD`** (app timezone); date form/filter fields use a calendar **DatePicker** (`YYYY-MM-DD`, no manual typing)
 - User display on inventory/receivings — **Created/Updated/Deleted By** shown as **`[lastname], [F].`** (`lib/format-user.ts` / `formatUserDisplay`)
 - File upload with configurable storage (File System / Cloudinary)
-- Application settings (logo, favicon, name, tagline, timezone, **address**, **phone**, currency, storage type) — used on receivings print header
+- Application settings (logo, favicon, name, tagline, timezone, **address**, **phone**, currency, storage type) — used on document print headers (`printDocumentPdf`)
+- Shared document print — **`lib/print/document-print.ts`** branded PDF layout for receivings, releasings, and future documents
 - Password management (change password, forgot/reset flow)
 - **Audit fields** on all modules — createdBy, updatedBy, deletedBy, deletedReason (receivings use the same `deleted_*` columns; workflow status may be Draft/Completed/Cancelled)
 
@@ -161,6 +163,8 @@ lib/
 │   ├── index.ts          # Drizzle database client
 │   └── schema.ts         # All table schemas
 ├── permissions.ts        # Cached RBAC permission lookups (30s TTL)
+├── print/
+│   └── document-print.ts # Shared branded PDF layout (receivings/releasings/future)
 ├── receiving-stock.ts    # Receivings complete/cancel stock posting (db.transaction)
 ├── receivings.ts         # Trans #/batch helpers, re-export formatUserDisplay
 ├── settings.ts           # Cached app settings + getAppTimezone(); address/phone for print headers
