@@ -29,6 +29,7 @@ interface ReceivingItemsTableProps {
   masterStatus: ReceivingStatus;
   timezone: string;
   onMutated?: () => void;
+  reloadKey?: number;
 }
 
 export function ReceivingItemsTable({
@@ -36,6 +37,7 @@ export function ReceivingItemsTable({
   masterStatus,
   timezone,
   onMutated,
+  reloadKey = 0,
 }: ReceivingItemsTableProps) {
   const [data, setData] = useState<ReceivingItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export function ReceivingItemsTable({
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, reloadKey]);
 
   const columns = getReceivingItemColumns({
     masterStatus,

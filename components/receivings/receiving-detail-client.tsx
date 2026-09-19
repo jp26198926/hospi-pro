@@ -95,6 +95,7 @@ export function ReceivingDetailClient({
   const [action, setAction] = useState<"complete" | "cancel" | "restore">(
     "complete",
   );
+  const [itemsReloadKey, setItemsReloadKey] = useState(0);
 
   const refresh = async () => {
     try {
@@ -104,6 +105,7 @@ export function ReceivingDetailClient({
     } catch {
       // ignore
     }
+    setItemsReloadKey((k) => k + 1);
   };
 
   const handlePrint = async () => {
@@ -494,6 +496,7 @@ export function ReceivingDetailClient({
                 masterStatus={receiving.status}
                 timezone={timezone}
                 onMutated={refresh}
+                reloadKey={itemsReloadKey}
               />
             </div>
           </div>
