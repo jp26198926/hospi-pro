@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { formatDateOnly } from "@/lib/datetime";
 import { statusBadge, type ReceivingStatus } from "./receivings-columns";
@@ -13,6 +14,7 @@ import {
   Printer,
   XCircle,
   RotateCcw,
+  ArrowLeft,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -411,6 +413,12 @@ export function ReceivingDetailClient({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link href="/receivings">
+            <Button variant="outline" size="sm" className="border-[#ccc]">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </Link>
           {receiving.status === "Draft" && (
             <>
               <Button

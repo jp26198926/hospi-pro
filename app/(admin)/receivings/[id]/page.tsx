@@ -1,7 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { receivings, suppliers, locations, users } from "@/lib/db/schema";
@@ -80,14 +77,6 @@ export default async function ReceivingDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <Link href="/receivings">
-          <Button variant="outline" size="sm" className="border-[#ccc]">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Receivings
-          </Button>
-        </Link>
-      </div>
       <ReceivingDetailClient
         initial={{
           ...row,
