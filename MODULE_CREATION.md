@@ -301,10 +301,18 @@ export default async function CategoriesPage() {
 - `await requirePageRead("/<path>")` as first line (same Read guard as index page).
 - `generateMetadata` queries DB for dynamic title.
 - `await params`, `notFound()` on invalid/missing.
-- Direct DB query (no API fetch).
+- Direct DB query (no API fetch) for simple modules.
 - Ace Admin card + `dl` grid; status badge.
 - Dates via **`formatDateOnly(date, tz)`** from `lib/datetime.ts` → always **`YYYY-MM-DD`** — fetch timezone with `const tz = await getAppTimezone()` from `lib/settings.ts`.
 - Back button links to `/<plural>`.
+
+**Document detail pages** (`receivings/[id]`, `releasings/[id]` — preferred for workflow modules):
+- Server page: load master (+ location/supplier joins), user display names via `formatUserDisplay`, `getAppTimezone()`, `getAppSettings()` → pass to a **client detail component**.
+- Client layout: **two-column** like `roles/[id]` — items table left, master info + actions right.
+- **List Trans #** cell is a button calling `onView` → `router.push('/<plural>/' + id)` (same as Eye).
+- Action row: **Back** (label Back only) + status-gated Edit / Complete / Cancel / Print / Restore.
+- Items table reload key after master actions so status column refreshes without full page reload.
+- Print: call **`printDocumentPdf`** (`lib/print/document-print.ts`) — do not draw jsPDF chrome in the page.
 
 **Timezone prop for tables**: if your table displays dates, pass timezone from the page:
 
@@ -371,6 +379,7 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 - [ ] `app/(admin)/<plural>/layout.tsx`
 - [ ] `app/(admin)/<plural>/page.tsx` (with `requirePageRead` guard + timezone prop)
 - [ ] Optional: `app/(admin)/<plural>/[id]/page.tsx` (with `requirePageRead` + **`formatDateOnly`** for all date cells)
+- [ ] Document modules: list **Trans #** clickable → detail; detail uses **roles two-column** layout + **`printDocumentPdf`** + status-gated actions; Back on action row
 - [ ] Insert row into `pages` table for sidebar
 - [ ] Grant View on parent page + View/Read on new page for roles that need access
 - [ ] Grant **Read** on FK lookup pages (e.g. `/uoms`) for roles that open this module’s forms

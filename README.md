@@ -16,8 +16,8 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Trans Type management (unique name, transaction type lookup)
 - Stock Level (read-only current qty per product and location; filled by future transaction modules)
 - Stock Movement (read-only inventory trail: trans type, qty +/-, reference, remarks)
-- Receivings (Draft/Completed/Cancelled goods receiving; items on detail; Mark as Completed posts stock_levels + stock_movements + product costs; **list defaults to Draft**; **Print** uses shared **`lib/print/document-print.ts`** with app branding)
-- Releasings (Draft/Completed/Cancelled stock release from location; items + **barcode scan auto-add** (`5*CODE`); complete decrements stock; list defaults to Draft; **same print layout** via `printDocumentPdf`)
+- Receivings — list `/receivings` (**Trans #** `RCV-#####` is **clickable** → detail; list defaults to **Draft**). **Detail `/receivings/[id]`**: master info + items table (Batch #, UOM, Qty/Cost/Total `0.0000`); status actions **Back | Edit | Mark as Completed | Cancel / Print / Restore** on one row; toggle cancelled items; Print via shared `printDocumentPdf`.
+- Releasings — list `/releasings` (**Trans #** `RLS-#####` **clickable** → detail; Draft default). **Detail `/releasings/[id]`**: from/to location + receiver + items (Series `RI-######`, UOM); **barcode scan auto-add** (`5*CODE`); same status actions + print layout as receivings (`RELEASING` / Released By).
 - GST Types management
 - Suppliers management (with audit trail)
 - Products management (editable product codes with optional next-code prefill, required UOM + GST type FKs, optional category, stock/cost tracking)
@@ -27,6 +27,7 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - File upload with configurable storage (File System / Cloudinary)
 - Application settings (logo, favicon, name, tagline, timezone, **address**, **phone**, currency, storage type) — used on document print headers (`printDocumentPdf`)
 - Shared document print — **`lib/print/document-print.ts`** branded PDF layout for receivings, releasings, and future documents
+- **Detail pages** for receivings/releasings — roles-style two-column layout (items + master info); **Back** on the action row; list **Trans #** navigates to detail
 - Password management (change password, forgot/reset flow)
 - **Audit fields** on all modules — createdBy, updatedBy, deletedBy, deletedReason (receivings use the same `deleted_*` columns; workflow status may be Draft/Completed/Cancelled)
 
@@ -97,13 +98,18 @@ app/
 │   ├── locations/
 │   ├── pages/
 │   ├── permissions/
-│   ├── products/
-│   ├── roles/
+│   ├── products/          # + [id] detail
+│   ├── receivings/        # list + [id] detail (items, complete/print)
+│   ├── releasings/        # list + [id] detail (items, scan, print)
+│   ├── roles/             # + [id] detail (permissions)
 │   ├── settings-application/
 │   ├── settings-cloudinary/
 │   ├── settings-mail/
 │   ├── settings-sms/
+│   ├── stock-levels/      # read-only qty by product/location
+│   ├── stock-movements/   # read-only inventory trail
 │   ├── suppliers/
+│   ├── trans-types/
 │   ├── uoms/
 │   └── users/
 ├── (auth)/               # Public auth pages

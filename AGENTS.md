@@ -82,12 +82,13 @@ Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`,
 
 **`receivings` / `receiving_items`**: document workflow enum **`inventory_status`** / TS **`inventoryStatusEnum`** (`Draft` | `Completed` | `Cancelled`) — **not** `commonStatusEnum`. Shared with **releasings** / **releasing_items**. Audit columns use standard **`deleted_at` / `deleted_by` / `deleted_reason`** (renamed from cancelled_*). Trans # `RCV-#####` / batch `BATCH-######` derived from ids. Master form first; items on detail. **Mark as Completed** uses `db.transaction` in `lib/receiving-stock.ts`: insert `stock_movements` (+qty), upsert `stock_levels`, update `products.stock`/`lastCost`/`avgCost`. Draft cancel does **not** reverse stock; completed cancel can reverse via same helper. Trans types seeded: `Receiving`, `Receiving Cancel`. UI Created/Updated/Deleted By use `formatUserDisplay` → `[lastname], [F].`. **List page defaults to `status=Draft`**; Completed/Cancelled only via Advanced Search (Clear returns to Draft).
 
-**Receivings detail UI/print**:
-- Detail header: **Back** (to `/receivings`) sits **on the same row** as status actions (Edit / Mark as Completed / Cancel / Print / Restore) — label **Back** only, no separate “Back to Receivings” bar.
-- Items DataTable: QTY / COST / TOTAL formatted **`0.0000`** (matches `decimal(10,4)`); those columns are **right-aligned**.
-- **Print PDF** uses shared **`printDocumentPdf`** in **`lib/print/document-print.ts`** (branded header, fields box, items table, remarks, signatures, footer). Do not copy jsPDF into each detail client — pass fields/columns/rows only. App name/logo/address/phone via `getAppSettings()`.
-- Print items table: `NO | BATCH # | ITEM DESCRIPTION | QTY | UOM | UNIT PRICE | TOTAL COST | REMARKS | STATUS` — **no Location column** (Location is in the header fields box). Numbers `0.0000`; series `BATCH-######`; description `code - name`; UOM from `GET /api/receiving-items` (`uomName` via products→uoms join).
-- Items **DataTable** on detail also has a **UOM** column (`uomName` from the same API join).
+**Receivings detail UI/print** (`/receivings/[id]` + `components/receivings/receiving-detail-client.tsx`):
+- **List:** Trans # **`RCV-#####` is clickable** → detail (`receivings-columns.tsx` calls `onView`); Eye/View does the same.
+- **Layout:** roles-style **two-column** — left **Receiving Items** (toggle cancelled + modals), right **Receiving Information** (trans #, date, supplier, location, PO/invoice, status, audit users).
+- **Actions (one row):** **Back** (to `/receivings`, label Back only) + status-gated **Edit / Mark as Completed / Cancel / Print / Restore**.
+- **Items DataTable:** Series `BATCH-######`, Product, **UOM**, Qty/Cost/Total **`0.0000` right-aligned**, Expiry, Remarks, Status; Edit/Cancel/Restore only when master is **Draft**.
+- **Print PDF** uses shared **`printDocumentPdf`** in **`lib/print/document-print.ts`** — RECEIVING banner; fields Date/Supplier/PO \| Status/Invoice/Location; items table as above (no Location column); signatures Received By / Verified By.
+- `onMutated` / `reloadKey` refresh items after complete/cancel/restore.
 
 **`lib/settings.ts` `AppSettings`**: includes `appLogo`, `appName`, `appTagline`, `timezone`, **`address`**, **`phone`** — used by **`printDocumentPdf`** headers.
 
@@ -95,13 +96,19 @@ Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`,
 
 **`stock_movements` is special**: append-only inventory trail (date, trans type FK, product/location FKs, signed qty, reference ids/description, remarks, `createdAt`/`createdBy`). **No** status/soft-delete. UI/APIs read-only. UI shows Created At/By (not Updated). API returns **`createdByDisplay`** via `formatUserDisplay`. `reference_trans_id`/`reference_item_id` are plain nullable bigints — **no DB FK** until master-detail modules exist. Future transactions insert here **and** upsert `stock_levels`. Trail DataTable keeps Created At despite wide column count (user-requested).
 
-**`releasings` / `releasing_items`**: document workflow **`Draft`/`Completed`/`Cancelled`** via shared **`inventoryStatusEnum`** (`inventory_status`). Trans # **`RLS-#####`**, series **`RI-######`**. Fields: date, fromLocationId (required), toLocationId (optional), receiverName. Items: productId, qty, dateExpiry, remarks (no unit cost). **Complete** posts stock_movements **-qty** (trans **Releasing**) at from location; decrements `stock_levels` + `products.stock` (`lib/releasing-stock.ts`). Draft cancel: no stock reverse. Item add validates stock at from location. **Scan barcode auto-adds item on Enter** — `GET /api/products/scan?code=` matches **product code**; syntax `5*CODE` (default qty 1); F2 focuses input; POST to `/api/releasing-items` then refresh list. List defaults to Draft. **Print** uses shared **`printDocumentPdf`** (same chrome as receivings: RELEASING banner, Released By/Verified By). Sidebar icon `truck`.
+**Releasings detail UI/print** (`/releasings/[id]` + `components/releasings/releasing-detail-client.tsx`):
+- **List:** Trans # **`RLS-#####` clickable** → detail; status **View** button same path; list defaults to Draft.
+- **Layout:** same two-column pattern as receivings; left **Releasing Items** + **scan bar** (Draft only), right **Releasing Information** (date, from/to location, receiver, status, audit users).
+- **Actions:** **Back** + Edit / Mark as Completed / Cancel / Print / Restore (status-gated) — same chrome as receivings.
+- **Items:** Series **`RI-######`**, Product Code/Name, Qty `0.0000`, **UOM**, Expiry, Remarks, Status; actions only if master Draft; **show cancelled** toggle.
+- **Scan:** Enter / Scan button **auto-adds** item (`GET /api/products/scan` then POST releasing-items); F2 focuses; `5*CODE` qty syntax; stock validated at from-location.
+- **Print:** **`printDocumentPdf`** — RELEASING title; Releasing No.; fields Date/From/To \| Status/Receiver; items without cost columns; signatures Released By / Verified By.
 
 **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
 
 ## CRUD module pattern
 
-Follow the Departments/Roles module end-to-end. Full step-by-step guide with naming conventions and checklist: `MODULE_CREATION.md`. For required FKs, join display names, editable unique codes, and wide-table Created At omission, use **products** as the reference module. For **master-detail documents** (Draft/Completed/Cancelled + items + stock posting), use **receivings** / **releasings** (`roles` detail layout + `lib/receiving-stock.ts` / `lib/releasing-stock.ts` `db.transaction`). For **document PDFs**, call **`printDocumentPdf`** in `lib/print/document-print.ts`.
+Follow the Departments/Roles module end-to-end. Full step-by-step guide with naming conventions and checklist: `MODULE_CREATION.md`. For required FKs, join display names, editable unique codes, and wide-table Created At omission, use **products** as the reference module. For **master-detail documents** (Draft/Completed/Cancelled + items + stock posting), use **receivings** / **releasings** detail pages (`roles/[id]` layout, clickable list Trans #, `lib/receiving-stock.ts` / `lib/releasing-stock.ts` `db.transaction`). For **document PDFs**, call **`printDocumentPdf`** in `lib/print/document-print.ts`.
 
 File layout for a new module `<name>`:
 

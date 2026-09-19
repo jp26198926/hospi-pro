@@ -56,11 +56,20 @@ export function getColumns({
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
-      cell: ({ row }) => (
-        <span className="font-medium text-[#337ab7]">
-          {row.original.transNo || `RCV-${String(row.original.id).padStart(5, "0")}`}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const label =
+          row.original.transNo || `RCV-${String(row.original.id).padStart(5, "0")}`;
+        return (
+          <button
+            type="button"
+            onClick={() => onView(row.original)}
+            className="font-medium text-[#337ab7] hover:underline"
+            title="View receiving"
+          >
+            {label}
+          </button>
+        );
+      },
     },
     {
       accessorKey: "date",

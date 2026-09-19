@@ -56,12 +56,21 @@ export function getColumns({
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
-      cell: ({ row }) => (
-        <span className="font-medium text-[#337ab7]">
-          {row.original.transNo ||
-            `RLS-${String(row.original.id).padStart(5, "0")}`}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const label =
+          row.original.transNo ||
+          `RLS-${String(row.original.id).padStart(5, "0")}`;
+        return (
+          <button
+            type="button"
+            onClick={() => onView(row.original)}
+            className="font-medium text-[#337ab7] hover:underline"
+            title="View releasing"
+          >
+            {label}
+          </button>
+        );
+      },
     },
     {
       accessorKey: "date",
