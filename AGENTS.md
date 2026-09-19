@@ -54,7 +54,7 @@ All `db:*` scripts use `dotenv-cli` with `-e .env.local` — they load env autom
 - **Auth gate**: `proxy.ts` at project root is the **Next.js 16 replacement for `middleware.ts`** (the `middleware` file convention is deprecated). Export must be named `proxy`, not `middleware`. Public API routes are listed in `PUBLIC_API_ROUTES`; public pages in `PUBLIC_PAGES`. New unauthenticated endpoints must be added there.
 - **Dynamic sidebar**: nav items come from the `pages` table (parent/child via `parentId`). Adding a menu item = inserting a row, not editing a component. Icon names map in `components/layout/sidebar.tsx`.
 - **DB connection** (`lib/db/index.ts`): uses `globalThis` to avoid leaks during HMR.
-- **App settings** (`lib/settings.ts`): cached 30s in-memory helper reading `settings_app` id=1 (logo, favicon, name, timezone, currency, storage type). Also exports `getAppTimezone()`.
+- **App settings** (`lib/settings.ts`): cached 30s in-memory helper reading `settings_app` id=1 (logo, favicon, name, tagline, timezone, **address**, **phone**, storage type). Also exports `getAppTimezone()`. Print headers use `getAppSettings()`.
 - **RBAC enforcement**: `lib/permissions.ts` — cached (30s per roleId) permission map from `role_permissions` join. `lib/api-auth.ts` — `requirePermission(request, pagePath, permName)` for API routes (returns AuthUser or 401/403 Response), `requireAuth(request)` for auth-only routes, `requirePageRead(pagePath)` for server component pages (calls `notFound()` on failure). Permission mapping: GET→Read, POST→Add, PUT→Edit, DELETE→Delete, PATCH→Restore, Clone→Clone, Export→Export. Sidebar uses `/api/pages?mine=1` filtered by View permission.
 - **Datetime** (`lib/datetime.ts`): pure formatting — **`formatDateOnly(date, timeZone)` is the project standard** and always returns **`YYYY-MM-DD`** (app timezone via `getAppTimezone()`). `formatDateTime` / `formatDateTimeLong` are deprecated aliases of `formatDateOnly`. **No db/server imports** — client components depend on this. All timestamp columns use `timestamp({ withTimezone: true, mode: "date" })` (timestamptz).
 - **File uploads**: `app/api/upload/` — filesystem (`public/uploads/`) or Cloudinary, chosen by `settings_app.primaryStorage`.
@@ -81,6 +81,14 @@ deletedReason  text                  nullable  set on DELETE from optional reque
 Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`, `uoms`, `payment_methods`, `payment_terms`, `trans_types`, `stock_levels`, `stock_movements`, `receivings`, `receiving_items`, `suppliers`, `products`, `gst_types`, `roles`, `users`, `pages`, `permissions`, `role_permissions`, `currencies`, `timezones`, `settings_app`, `settings_mail`, `settings_sms`, `settings_cloudinary`, `refresh_tokens`. Add new tables here.
 
 **`receivings` / `receiving_items`**: document workflow enum `receiving_status` (`Draft` | `Completed` | `Cancelled`) — **not** `commonStatusEnum`. Audit columns use standard **`deleted_at` / `deleted_by` / `deleted_reason`** (renamed from cancelled_*). Trans # `RCV-#####` / batch `BATCH-######` derived from ids. Master form first; items on detail. **Mark as Completed** uses `db.transaction` in `lib/receiving-stock.ts`: insert `stock_movements` (+qty), upsert `stock_levels`, update `products.stock`/`lastCost`/`avgCost`. Draft cancel does **not** reverse stock; completed cancel can reverse via same helper. Trans types seeded: `Receiving`, `Receiving Cancel`. UI Created/Updated/Deleted By use `formatUserDisplay` → `[lastname], [F].`. **List page defaults to `status=Draft`**; Completed/Cancelled only via Advanced Search (Clear returns to Draft).
+
+**Receivings detail UI/print**:
+- Detail header: **Back** (to `/receivings`) sits **on the same row** as status actions (Edit / Mark as Completed / Cancel / Print / Restore) — label **Back** only, no separate “Back to Receivings” bar.
+- Items DataTable: QTY / COST / TOTAL formatted **`0.0000`** (matches `decimal(10,4)`); those columns are **right-aligned**.
+- **Print PDF** layout lives in `handlePrint` in `components/receivings/receiving-detail-client.tsx` (jsPDF + autoTable) — edit that function for print design. Uses app name/logo/address/phone via `getAppSettings()` prop from `[id]/page.tsx`.
+- Print items table: `NO | BATCH # | ITEM DESCRIPTION | QTY | UOM | UNIT PRICE | TOTAL COST | REMARKS | STATUS` — **no Location column** (Location is in the header fields box). Numbers `0.0000`; series `BATCH-######`; description `code - name`; UOM from `GET /api/receiving-items` (`uomName` via products→uoms join).
+
+**`lib/settings.ts` `AppSettings`**: includes `appLogo`, `appName`, `appTagline`, `timezone`, **`address`**, **`phone`** — used by receivings print header.
 
 **`stock_levels` is special**: current qty per product+location (unique `(productId, locationId)`), **no status/soft-delete/createdAt**. UI and APIs are **read-only** (GET list/detail only; no Add/Edit/Delete UI). Future transaction modules upsert rows and set `updatedAt`/`updatedBy`. API returns **`updatedByDisplay`** via `formatUserDisplay` (`lib/format-user.ts`).
 
@@ -151,6 +159,8 @@ Hardcoded hex colors, not Tailwind theme tokens — match these exactly:
 **Columns**: Count DataTable data columns only (exclude `#` and `Actions`; include `status` and domain fields). If more than 5 data columns, omit the **Created At** column from `getColumns()` for new modules. `#` and Actions stay. Exports/mobile/detail may still show dates. Reference: products omits Created At; roles/departments keep it as legacy narrow tables.
 
 **Exports**: PDF via `jspdf` + `jspdf-autotable`; Excel via `xlsx`. Include the status column.
+
+**Inventory numbers**: qty/unit cost/total on receivings items (and similar stock amounts) display as **`0.0000`** (schema `decimal(10,4)`). Right-align numeric columns in DataTables and print tables.
 
 ## Gotchas
 
