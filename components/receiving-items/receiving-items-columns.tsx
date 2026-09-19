@@ -12,6 +12,8 @@ export interface ReceivingItem {
   productId: number;
   productCode: string;
   productName: string;
+  uomId?: number | null;
+  uomName?: string | null;
   qty: string;
   unitCost: string;
   totalCost: string;
@@ -71,6 +73,13 @@ export function getReceivingItemColumns({
       accessorKey: "productName",
       header: "Product Name",
       cell: ({ row }) => <span>{row.original.productName}</span>,
+    },
+    {
+      accessorKey: "uomName",
+      header: "UOM",
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{row.original.uomName || "-"}</span>
+      ),
     },
     {
       accessorKey: "qty",

@@ -87,6 +87,7 @@ Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`,
 - Items DataTable: QTY / COST / TOTAL formatted **`0.0000`** (matches `decimal(10,4)`); those columns are **right-aligned**.
 - **Print PDF** layout lives in `handlePrint` in `components/receivings/receiving-detail-client.tsx` (jsPDF + autoTable) — edit that function for print design. Uses app name/logo/address/phone via `getAppSettings()` prop from `[id]/page.tsx`.
 - Print items table: `NO | BATCH # | ITEM DESCRIPTION | QTY | UOM | UNIT PRICE | TOTAL COST | REMARKS | STATUS` — **no Location column** (Location is in the header fields box). Numbers `0.0000`; series `BATCH-######`; description `code - name`; UOM from `GET /api/receiving-items` (`uomName` via products→uoms join).
+- Items **DataTable** on detail also has a **UOM** column (`uomName` from the same API join).
 
 **`lib/settings.ts` `AppSettings`**: includes `appLogo`, `appName`, `appTagline`, `timezone`, **`address`**, **`phone`** — used by receivings print header.
 
