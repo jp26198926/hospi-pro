@@ -8,6 +8,8 @@ export interface AppSettings {
   appName: string;
   appTagline: string | null;
   timezone: string | null;
+  address: string | null;
+  phone: string | null;
 }
 
 let cached: AppSettings | null = null;
@@ -52,6 +54,8 @@ export async function getAppSettings(): Promise<AppSettings> {
         appName: settingsApp.appName,
         appTagline: settingsApp.appTagline,
         timezone: timezones.timezone,
+        address: settingsApp.address,
+        phone: settingsApp.phone,
       })
       .from(settingsApp)
       .leftJoin(timezones, eq(settingsApp.timezoneId, timezones.id))
@@ -63,6 +67,8 @@ export async function getAppSettings(): Promise<AppSettings> {
       appName: row?.appName ?? "RBAC System",
       appTagline: row?.appTagline ?? null,
       timezone: row?.timezone ?? null,
+      address: row?.address ?? null,
+      phone: row?.phone ?? null,
     };
     cacheTime = now;
     return cached;
@@ -73,6 +79,8 @@ export async function getAppSettings(): Promise<AppSettings> {
       appName: "RBAC System",
       appTagline: null,
       timezone: null,
+      address: null,
+      phone: null,
     };
   }
 }

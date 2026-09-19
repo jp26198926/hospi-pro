@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { receivingItems, receivings, products } from "@/lib/db/schema";
+import { receivingItems, receivings, products, uoms } from "@/lib/db/schema";
 import { receivingItemSchema } from "@/lib/validations/receiving-item";
 import { formatBatchNo } from "@/lib/validations/receiving-item";
 import { eq, desc, asc, ilike, and, ne, count as drizzleCount } from "drizzle-orm";
@@ -62,6 +62,8 @@ export async function GET(request: NextRequest) {
           productId: receivingItems.productId,
           productCode: products.code,
           productName: products.name,
+          uomId: products.uomId,
+          uomName: uoms.name,
           qty: receivingItems.qty,
           unitCost: receivingItems.unitCost,
           totalCost: receivingItems.totalCost,
@@ -74,6 +76,7 @@ export async function GET(request: NextRequest) {
         })
         .from(receivingItems)
         .innerJoin(products, eq(receivingItems.productId, products.id))
+        .innerJoin(uoms, eq(products.uomId, uoms.id))
         .where(where)
         .orderBy(orderFn(sortColumn))
         .limit(limit)
@@ -82,6 +85,7 @@ export async function GET(request: NextRequest) {
         .select({ value: drizzleCount() })
         .from(receivingItems)
         .innerJoin(products, eq(receivingItems.productId, products.id))
+        .innerJoin(uoms, eq(products.uomId, uoms.id))
         .where(where),
     ]);
 

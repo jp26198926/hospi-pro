@@ -23,8 +23,10 @@ export interface ReceivingItem {
 function fmtNum(v: string | number) {
   const n = Number(v);
   if (!Number.isFinite(n)) return String(v);
-  return n.toFixed(4).replace(/\.?0+$/, "") || "0";
+  return n.toFixed(4);
 }
+
+export { fmtNum };
 
 export function getReceivingItemColumns({
   masterStatus,
@@ -72,20 +74,24 @@ export function getReceivingItemColumns({
     },
     {
       accessorKey: "qty",
-      header: "Qty",
+      header: () => <div className="text-right">Qty</div>,
       cell: ({ row }) => (
-        <span className="font-medium">{fmtNum(row.original.qty)}</span>
+        <div className="text-right font-medium">{fmtNum(row.original.qty)}</div>
       ),
     },
     {
       accessorKey: "unitCost",
-      header: "Cost",
-      cell: ({ row }) => <span>{fmtNum(row.original.unitCost)}</span>,
+      header: () => <div className="text-right">Cost</div>,
+      cell: ({ row }) => (
+        <div className="text-right">{fmtNum(row.original.unitCost)}</div>
+      ),
     },
     {
       accessorKey: "totalCost",
-      header: "Total",
-      cell: ({ row }) => <span>{fmtNum(row.original.totalCost)}</span>,
+      header: () => <div className="text-right">Total</div>,
+      cell: ({ row }) => (
+        <div className="text-right">{fmtNum(row.original.totalCost)}</div>
+      ),
     },
     {
       accessorKey: "dateExpiry",

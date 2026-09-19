@@ -45,7 +45,7 @@ export function ReceivingsTable({ timezone }: { timezone: string }) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("Draft");
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [supplierOptions, setSupplierOptions] = useState<
     { value: string; label: string }[]
@@ -94,7 +94,7 @@ export function ReceivingsTable({ timezone }: { timezone: string }) {
         sortOrder,
       });
       if (search) params.set("search", search);
-      if (statusFilter !== "all") params.set("status", statusFilter);
+      params.set("status", statusFilter);
       if (supplierFilter !== "all") params.set("supplierId", supplierFilter);
 
       const res = await fetch(`/api/receivings?${params}`);

@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { receivings, suppliers, locations, users } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
-import { getAppTimezone } from "@/lib/settings";
+import { getAppTimezone, getAppSettings } from "@/lib/settings";
 import { requirePageRead } from "@/lib/api-auth";
 import { formatReceivingNo } from "@/lib/validations/receiving-item";
 import { formatUserDisplay } from "@/lib/receivings";
@@ -76,6 +76,7 @@ export default async function ReceivingDetailPage({ params }: Props) {
   );
 
   const timezone = await getAppTimezone();
+  const appSettings = await getAppSettings();
 
   return (
     <div className="space-y-4">
@@ -97,6 +98,13 @@ export default async function ReceivingDetailPage({ params }: Props) {
           transNo: formatReceivingNo(row.id),
         }}
         timezone={timezone}
+        appSettings={{
+          appName: appSettings.appName,
+          appLogo: appSettings.appLogo,
+          address: appSettings.address,
+          phone: appSettings.phone,
+          appTagline: appSettings.appTagline,
+        }}
       />
     </div>
   );

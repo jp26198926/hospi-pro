@@ -37,7 +37,7 @@ export function ReceivingSearchModal({
   supplierOptions,
 }: ReceivingSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("Draft");
   const [supplierFilter, setSupplierFilter] = useState("all");
 
   const handleSearch = () => {
@@ -47,9 +47,9 @@ export function ReceivingSearchModal({
 
   const handleClear = () => {
     setSearchTerm("");
-    setStatusFilter("all");
+    setStatusFilter("Draft");
     setSupplierFilter("all");
-    onSearch("", "all", "all");
+    onSearch("", "Draft", "all");
     onOpenChange(false);
   };
 
