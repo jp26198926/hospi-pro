@@ -31,13 +31,13 @@ export interface Adjustment {
   deletedByDisplay?: string | null;
 }
 
-function fmtQty(v: string | number) {
+export function fmtQty(v: string | number) {
   const n = Number(v);
   if (!Number.isFinite(n)) return String(v);
   return n.toFixed(4);
 }
 
-function fmtAdj(v: string | number) {
+export function fmtAdj(v: string | number) {
   const n = Number(v);
   if (!Number.isFinite(n)) return String(v);
   const abs = Math.abs(n).toFixed(4);
@@ -204,4 +204,3 @@ export function getAdjustmentColumns({
   ];
 }
 
-export { fmtQty, fmtAdj };

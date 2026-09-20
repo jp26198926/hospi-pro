@@ -29,9 +29,14 @@ import {
   ChevronRight,
   Plus,
   Search,
+  FileDown,
   Loader2,
   Eye,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { formatDateOnly } from "@/lib/datetime";
 import { getColumns, Receiving } from "./receivings-columns";
 import { ReceivingFormModal } from "./receiving-form-modal";
 import { ReceivingSearchModal } from "./receiving-search-modal";
@@ -130,6 +135,59 @@ export function ReceivingsTable({ timezone }: { timezone: string }) {
     manualSorting: true,
   });
 
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Receivings Report", 14, 20);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [
+        [
+          "#",
+          "Trans #",
+          "Date",
+          "Supplier",
+          "PO No.",
+          "Invoice No.",
+          "Created By",
+          "Status",
+        ],
+      ],
+      body: data.map((row, idx) => [
+        idx + 1,
+        row.transNo || `RCV-${String(row.id).padStart(5, "0")}`,
+        formatDateOnly(row.date, timezone),
+        row.supplierName || "-",
+        row.poNumber || "-",
+        row.invoiceNumber || "-",
+        row.createdByDisplay || "-",
+        row.status,
+      ]),
+      styles: { fontSize: 8 },
+    });
+
+    doc.save("receivings.pdf");
+  };
+
+  const exportExcel = () => {
+    const worksheetData = data.map((row, idx) => ({
+      "#": idx + 1,
+      "Trans #": row.transNo || `RCV-${String(row.id).padStart(5, "0")}`,
+      Date: formatDateOnly(row.date, timezone),
+      Supplier: row.supplierName || "-",
+      "PO No.": row.poNumber || "-",
+      "Invoice No.": row.invoiceNumber || "-",
+      "Created By": row.createdByDisplay || "-",
+      Status: row.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Receivings");
+    XLSX.writeFile(workbook, "receivings.xlsx");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -152,6 +210,26 @@ export function ReceivingsTable({ timezone }: { timezone: string }) {
           >
             <Search className="h-4 w-4" />
             Advanced Search
+          </Button>
+        </div>
+        <div className="flex w-full gap-2 sm:w-auto sm:items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportPDF}
+            className="flex-1 border-[#ccc] sm:flex-none"
+          >
+            <FileDown className="h-4 w-4" />
+            PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportExcel}
+            className="flex-1 border-[#ccc] sm:flex-none"
+          >
+            <FileDown className="h-4 w-4" />
+            Excel
           </Button>
         </div>
       </div>

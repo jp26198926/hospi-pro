@@ -28,11 +28,21 @@ import {
   ChevronRight,
   Plus,
   Search,
+  FileDown,
   Loader2,
   Eye,
   Trash2,
 } from "lucide-react";
-import { getAdjustmentColumns, Adjustment } from "./adjustments-columns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { formatDateOnly } from "@/lib/datetime";
+import {
+  getAdjustmentColumns,
+  Adjustment,
+  fmtQty,
+  fmtAdj,
+} from "./adjustments-columns";
 import { AdjustmentFormModal } from "./adjustment-form-modal";
 import { AdjustmentSearchModal } from "./adjustment-search-modal";
 import {
@@ -163,6 +173,71 @@ export function AdjustmentsTable({ timezone, appSettings }: AdjustmentsTableProp
     manualSorting: true,
   });
 
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16);
+    doc.text("Adjustments Report", 14, 20);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [
+        [
+          "#",
+          "Trans #",
+          "Date",
+          "Location",
+          "Product",
+          "UOM",
+          "Old Qty",
+          "Adj Qty",
+          "New Qty",
+          "Remarks",
+          "Created By",
+          "Status",
+        ],
+      ],
+      body: data.map((row, idx) => [
+        idx + 1,
+        row.transNo || `ADJ-${String(row.id).padStart(5, "0")}`,
+        formatDateOnly(row.date, timezone),
+        row.locationName,
+        `${row.productCode} — ${row.productName}`,
+        row.uomName || "-",
+        fmtQty(row.qtyOld),
+        fmtAdj(row.qtyAdj),
+        fmtQty(row.qtyNew),
+        row.remarks || "-",
+        row.createdByDisplay || "-",
+        row.status,
+      ]),
+      styles: { fontSize: 7 },
+    });
+
+    doc.save("adjustments.pdf");
+  };
+
+  const exportExcel = () => {
+    const worksheetData = data.map((row, idx) => ({
+      "#": idx + 1,
+      "Trans #": row.transNo || `ADJ-${String(row.id).padStart(5, "0")}`,
+      Date: formatDateOnly(row.date, timezone),
+      Location: row.locationName,
+      Product: `${row.productCode} — ${row.productName}`,
+      UOM: row.uomName || "-",
+      "Old Qty": fmtQty(row.qtyOld),
+      "Adj Qty": fmtAdj(row.qtyAdj),
+      "New Qty": fmtQty(row.qtyNew),
+      Remarks: row.remarks || "-",
+      "Created By": row.createdByDisplay || "-",
+      Status: row.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Adjustments");
+    XLSX.writeFile(workbook, "adjustments.xlsx");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -181,6 +256,26 @@ export function AdjustmentsTable({ timezone, appSettings }: AdjustmentsTableProp
           >
             <Search className="h-4 w-4" />
             Advanced Search
+          </Button>
+        </div>
+        <div className="flex w-full gap-2 sm:w-auto sm:items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportPDF}
+            className="flex-1 border-[#ccc] sm:flex-none"
+          >
+            <FileDown className="h-4 w-4" />
+            PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportExcel}
+            className="flex-1 border-[#ccc] sm:flex-none"
+          >
+            <FileDown className="h-4 w-4" />
+            Excel
           </Button>
         </div>
       </div>

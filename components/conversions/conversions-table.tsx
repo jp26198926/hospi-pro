@@ -28,11 +28,20 @@ import {
   ChevronRight,
   Plus,
   Search,
+  FileDown,
   Loader2,
   Eye,
   Trash2,
 } from "lucide-react";
-import { getConversionColumns, Conversion } from "./conversions-columns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { formatDateOnly } from "@/lib/datetime";
+import {
+  getConversionColumns,
+  Conversion,
+  fmtQty,
+} from "./conversions-columns";
 import { ConversionFormModal } from "./conversion-form-modal";
 import { ConversionSearchModal } from "./conversion-search-modal";
 import {
@@ -144,6 +153,74 @@ export function ConversionsTable({ timezone, appSettings }: ConversionsTableProp
     manualSorting: true,
   });
 
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16);
+    doc.text("Conversions Report", 14, 20);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [
+        [
+          "#",
+          "Trans #",
+          "Date",
+          "Location",
+          "From Product",
+          "From UOM",
+          "From Qty",
+          "To Product",
+          "To UOM",
+          "New Qty",
+          "Remarks",
+          "Created By",
+          "Status",
+        ],
+      ],
+      body: data.map((row, idx) => [
+        idx + 1,
+        row.transNo || `CNV-${String(row.id).padStart(5, "0")}`,
+        formatDateOnly(row.date, timezone),
+        row.locationName,
+        `${row.fromProductCode} — ${row.fromProductName}`,
+        row.fromUomName || "-",
+        fmtQty(row.fromQty),
+        `${row.toProductCode} — ${row.toProductName}`,
+        row.toUomName || "-",
+        fmtQty(row.newQty),
+        row.remarks || "-",
+        row.createdByDisplay || "-",
+        row.status,
+      ]),
+      styles: { fontSize: 7 },
+    });
+
+    doc.save("conversions.pdf");
+  };
+
+  const exportExcel = () => {
+    const worksheetData = data.map((row, idx) => ({
+      "#": idx + 1,
+      "Trans #": row.transNo || `CNV-${String(row.id).padStart(5, "0")}`,
+      Date: formatDateOnly(row.date, timezone),
+      Location: row.locationName,
+      "From Product": `${row.fromProductCode} — ${row.fromProductName}`,
+      "From UOM": row.fromUomName || "-",
+      "From Qty": fmtQty(row.fromQty),
+      "To Product": `${row.toProductCode} — ${row.toProductName}`,
+      "To UOM": row.toUomName || "-",
+      "New Qty": fmtQty(row.newQty),
+      Remarks: row.remarks || "-",
+      "Created By": row.createdByDisplay || "-",
+      Status: row.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Conversions");
+    XLSX.writeFile(workbook, "conversions.xlsx");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -162,6 +239,26 @@ export function ConversionsTable({ timezone, appSettings }: ConversionsTableProp
           >
             <Search className="h-4 w-4" />
             Advanced Search
+          </Button>
+        </div>
+        <div className="flex w-full gap-2 sm:w-auto sm:items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportPDF}
+            className="flex-1 border-[#ccc] sm:flex-none"
+          >
+            <FileDown className="h-4 w-4" />
+            PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportExcel}
+            className="flex-1 border-[#ccc] sm:flex-none"
+          >
+            <FileDown className="h-4 w-4" />
+            Excel
           </Button>
         </div>
       </div>
