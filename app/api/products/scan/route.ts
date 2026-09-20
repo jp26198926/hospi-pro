@@ -2,11 +2,11 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { products, uoms, stockLevels } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { requirePermission } from "@/lib/api-auth";
+import { requireAuth } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await requirePermission(request, "/releasings", "Read");
+    const auth = await requireAuth(request);
     if (auth instanceof Response) return auth;
 
     const searchParams = request.nextUrl.searchParams;

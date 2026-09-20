@@ -18,6 +18,7 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Stock Movement (read-only inventory trail: trans type, qty +/-, reference, remarks)
 - Receivings — list `/receivings` (**Trans #** `RCV-#####` is **clickable** → detail; list defaults to **Draft**). **Detail `/receivings/[id]`**: master info + items table (Batch #, UOM, Qty/Cost/Total `0.0000`); status actions **Back | Edit | Mark as Completed | Cancel / Print / Restore** on one row; toggle cancelled items; Print via shared `printDocumentPdf`.
 - Releasings — list `/releasings` (**Trans #** `RLS-#####` **clickable** → detail; Draft default). **Detail `/releasings/[id]`**: from/to location + receiver + items (Series `RI-######`, UOM); **barcode scan auto-add** (`5*CODE`); same status actions + print layout as receivings (`RELEASING` / Released By).
+- Transfers — list `/transfers` (**Trans #** `TRAN-#####` **clickable**; Draft default). **Detail `/transfers/[id]`**: both from/to locations **required**; items + scan auto-add (Series `TI-######`); Complete moves stock **from→to** on `stock_levels` only (**no** `products.stock` update); print via `printDocumentPdf` (TRANSFER).
 - GST Types management
 - Suppliers management (with audit trail)
 - Products management (editable product codes with optional next-code prefill, required UOM + GST type FKs, optional category, stock/cost tracking)

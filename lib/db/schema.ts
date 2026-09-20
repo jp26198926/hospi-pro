@@ -217,6 +217,47 @@ export const releasingItems = pgTable("releasing_items", {
   deletedReason: text("deleted_reason"),
 });
 
+export const transfers = pgTable("transfers", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  date: timestamp("date", { withTimezone: true, mode: "date" }).notNull(),
+  fromLocationId: bigint("from_location_id", { mode: "number" })
+    .notNull()
+    .references(() => locations.id),
+  toLocationId: bigint("to_location_id", { mode: "number" })
+    .notNull()
+    .references(() => locations.id),
+  remarks: text("remarks"),
+  status: inventoryStatusEnum("status").notNull().default("Draft"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
+export const transferItems = pgTable("transfer_items", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  transferId: bigint("transfer_id", { mode: "number" })
+    .notNull()
+    .references(() => transfers.id),
+  productId: bigint("product_id", { mode: "number" })
+    .notNull()
+    .references(() => products.id),
+  qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
+  dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
+  remarks: text("remarks"),
+  status: inventoryStatusEnum("status").notNull().default("Draft"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
 export const suppliers = pgTable("suppliers", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   name: text("name").notNull().unique(),
