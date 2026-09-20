@@ -63,8 +63,11 @@ export async function GET(request: NextRequest) {
     }
     if (searchParent === "none") {
       conditions.push(sql`${pages.parentId} IS NULL`);
-    } else if (searchParent) {
-      conditions.push(eq(pages.parentId, parseInt(searchParent)));
+    } else if (searchParent && searchParent !== "all") {
+      const parentId = parseInt(searchParent);
+      if (Number.isFinite(parentId)) {
+        conditions.push(eq(pages.parentId, parentId));
+      }
     }
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 

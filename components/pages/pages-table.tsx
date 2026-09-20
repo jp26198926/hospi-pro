@@ -55,7 +55,7 @@ export function PagesTable() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [searchPath, setSearchPath] = useState("");
-  const [searchParent, setSearchParent] = useState("");
+  const [searchParent, setSearchParent] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Modal states
@@ -81,7 +81,9 @@ export function PagesTable() {
       });
       if (search) params.set("search", search);
       if (searchPath) params.set("searchPath", searchPath);
-      if (searchParent) params.set("searchParent", searchParent);
+      if (searchParent && searchParent !== "all") {
+        params.set("searchParent", searchParent);
+      }
       if (statusFilter !== "all") {
         params.set("status", statusFilter);
       }
@@ -92,6 +94,8 @@ export function PagesTable() {
       if (res.ok) {
         setData(json.data);
         setTotal(json.total);
+      } else {
+        toast.error(json.error || "Failed to load pages");
       }
     } catch (error) {
       console.error("Failed to fetch pages:", error);
