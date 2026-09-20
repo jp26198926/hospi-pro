@@ -134,7 +134,7 @@ export async function cancelAdjustment(
   userId: number,
   deletedReason: string | null
 ) {
-  const transTypeId = await getTransTypeIdByName("Adjustment");
+  const cancelTypeId = await getTransTypeIdByName("Adjustment Cancel");
   return db.transaction(async (tx) => {
     const [row] = await tx
       .select()
@@ -148,7 +148,7 @@ export async function cancelAdjustment(
 
     await tx.insert(stockMovements).values({
       date: new Date(),
-      transTypeId,
+      transTypeId: cancelTypeId,
       productId: row.productId,
       locationId: row.locationId,
       qty: fmt(reverseQty),
