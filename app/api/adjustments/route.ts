@@ -4,7 +4,7 @@ import { adjustments, locations, products, uoms, users } from "@/lib/db/schema";
 import { adjustmentSchema, formatAdjustmentNo } from "@/lib/validations/adjustment";
 import { createAdjustment } from "@/lib/adjustment-stock";
 import { formatUserDisplay } from "@/lib/format-user";
-import { eq, desc, asc, ilike, and, or, count as drizzleCount } from "drizzle-orm";
+import { eq, desc, asc, ilike, and, or, inArray, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
@@ -79,7 +79,12 @@ export async function GET(request: NextRequest) {
           remarks: adjustments.remarks,
           status: adjustments.status,
           createdAt: adjustments.createdAt,
+          updatedAt: adjustments.updatedAt,
+          deletedAt: adjustments.deletedAt,
+          deletedReason: adjustments.deletedReason,
           createdBy: adjustments.createdBy,
+          updatedBy: adjustments.updatedBy,
+          deletedBy: adjustments.deletedBy,
           createdByFirstname: users.firstname,
           createdByLastname: users.lastname,
         })
@@ -101,14 +106,45 @@ export async function GET(request: NextRequest) {
         .where(where),
     ]);
 
+    const userIds = [
+      ...new Set(
+        data.flatMap((row) =>
+          [row.createdBy, row.updatedBy, row.deletedBy].filter(
+            (v): v is number => typeof v === "number"
+          )
+        )
+      ),
+    ];
+    const userRows = userIds.length
+      ? await db
+          .select({
+            id: users.id,
+            firstname: users.firstname,
+            lastname: users.lastname,
+          })
+          .from(users)
+          .where(inArray(users.id, userIds))
+      : [];
+    const userMap = new Map(
+      userRows.map((u) => [
+        u.id,
+        formatUserDisplay(u.firstname, u.lastname),
+      ])
+    );
+
     return Response.json({
       data: data.map((row) => ({
         ...row,
         transNo: formatAdjustmentNo(row.id),
-        createdByDisplay: formatUserDisplay(
-          row.createdByFirstname,
-          row.createdByLastname
-        ),
+        createdByDisplay: row.createdBy
+          ? userMap.get(row.createdBy) || null
+          : null,
+        updatedByDisplay: row.updatedBy
+          ? userMap.get(row.updatedBy) || null
+          : null,
+        deletedByDisplay: row.deletedBy
+          ? userMap.get(row.deletedBy) || null
+          : null,
       })),
       total: countResult[0]?.value ?? 0,
       page,

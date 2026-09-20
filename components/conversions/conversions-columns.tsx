@@ -4,24 +4,26 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Eye, Trash2 } from "lucide-react";
 import { formatDateOnly } from "@/lib/datetime";
 
-export type AdjustmentStatus = "Completed" | "Cancelled";
+export type ConversionStatus = "Completed" | "Cancelled";
 
-export interface Adjustment {
+export interface Conversion {
   id: number;
   transNo?: string;
   date: Date | string;
   locationId: number;
   locationName: string;
-  productId: number;
-  productCode: string;
-  productName: string;
-  uomId?: number | null;
-  uomName?: string | null;
-  qtyOld: string;
-  qtyAdj: string;
-  qtyNew: string;
+  fromProductId: number;
+  fromProductCode: string;
+  fromProductName: string;
+  fromUomName?: string | null;
+  fromQty: string;
+  toProductId: number;
+  toProductCode: string;
+  toProductName: string;
+  toUomName?: string | null;
+  newQty: string;
   remarks: string | null;
-  status: AdjustmentStatus;
+  status: ConversionStatus;
   createdAt: Date | string;
   updatedAt?: Date | string | null;
   deletedAt?: Date | string | null;
@@ -37,27 +39,20 @@ function fmtQty(v: string | number) {
   return n.toFixed(4);
 }
 
-function fmtAdj(v: string | number) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return String(v);
-  const abs = Math.abs(n).toFixed(4);
-  return n < 0 ? `-${abs}` : `+${abs}`;
-}
-
-export function statusBadge(status: AdjustmentStatus) {
+export function statusBadge(status: ConversionStatus) {
   if (status === "Cancelled") return "bg-[#d9534f] text-white";
   return "bg-[#5cb85c] text-white";
 }
 
-export function getAdjustmentColumns({
+export function getConversionColumns({
   onView,
   onCancel,
   timezone,
 }: {
-  onView: (row: Adjustment) => void;
-  onCancel: (row: Adjustment) => void;
+  onView: (row: Conversion) => void;
+  onCancel: (row: Conversion) => void;
   timezone: string;
-}): ColumnDef<Adjustment>[] {
+}): ColumnDef<Conversion>[] {
   return [
     {
       accessorKey: "no",
@@ -73,13 +68,14 @@ export function getAdjustmentColumns({
       header: "Trans #",
       cell: ({ row }) => {
         const label =
-          row.original.transNo || `ADJ-${String(row.original.id).padStart(5, "0")}`;
+          row.original.transNo ||
+          `CNV-${String(row.original.id).padStart(5, "0")}`;
         return (
           <button
             type="button"
             onClick={() => onView(row.original)}
             className="font-medium text-[#337ab7] hover:underline"
-            title="View adjustment"
+            title="View conversion"
           >
             {label}
           </button>
@@ -103,49 +99,53 @@ export function getAdjustmentColumns({
       ),
     },
     {
-      accessorKey: "productCode",
-      header: "Product",
+      accessorKey: "fromProductCode",
+      header: "From Product",
       cell: ({ row }) => (
         <span className="font-medium">
-          {row.original.productCode} — {row.original.productName}
+          {row.original.fromProductCode} — {row.original.fromProductName}
         </span>
       ),
     },
     {
-      accessorKey: "uomName",
-      header: "UOM",
+      accessorKey: "fromUomName",
+      header: "From UOM",
       cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.uomName || "-"}</span>
+        <span className="text-muted-foreground">{row.original.fromUomName || "-"}</span>
       ),
     },
     {
-      accessorKey: "qtyOld",
-      header: () => <div className="text-right">Old Qty</div>,
+      accessorKey: "fromQty",
+      header: () => <div className="text-right">From Qty</div>,
       cell: ({ row }) => (
-        <div className="text-right text-muted-foreground">
-          {fmtQty(row.original.qtyOld)}
+        <div className="text-right font-medium text-[#d9534f]">
+          {fmtQty(row.original.fromQty)}
         </div>
       ),
     },
     {
-      accessorKey: "qtyAdj",
-      header: () => <div className="text-right">Adj Qty</div>,
-      cell: ({ row }) => {
-        const n = Number(row.original.qtyAdj);
-        return (
-          <div
-            className={`text-right font-medium ${n < 0 ? "text-[#d9534f]" : "text-[#5cb85c]"}`}
-          >
-            {fmtAdj(row.original.qtyAdj)}
-          </div>
-        );
-      },
+      accessorKey: "toProductCode",
+      header: "To Product",
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {row.original.toProductCode} — {row.original.toProductName}
+        </span>
+      ),
     },
     {
-      accessorKey: "qtyNew",
-      header: () => <div className="text-right">New Qty</div>,
+      accessorKey: "toUomName",
+      header: "To UOM",
       cell: ({ row }) => (
-        <div className="text-right font-medium">{fmtQty(row.original.qtyNew)}</div>
+        <span className="text-muted-foreground">{row.original.toUomName || "-"}</span>
+      ),
+    },
+    {
+      accessorKey: "newQty",
+      header: () => <div className="text-right">To Qty</div>,
+      cell: ({ row }) => (
+        <div className="text-right font-medium text-[#5cb85c]">
+          {fmtQty(row.original.newQty)}
+        </div>
       ),
     },
     {
@@ -153,15 +153,6 @@ export function getAdjustmentColumns({
       header: "Remarks",
       cell: ({ row }) => (
         <span className="text-muted-foreground">{row.original.remarks || "-"}</span>
-      ),
-    },
-    {
-      accessorKey: "createdByDisplay",
-      header: "Created By",
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.original.createdByDisplay || "-"}
-        </span>
       ),
     },
     {
@@ -204,4 +195,4 @@ export function getAdjustmentColumns({
   ];
 }
 
-export { fmtQty, fmtAdj };
+export { fmtQty };

@@ -12,13 +12,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, X } from "lucide-react";
 import { formatDateOnly } from "@/lib/datetime";
-import { statusBadge, fmtQty, fmtAdj, type Adjustment } from "./adjustments-columns";
+import { statusBadge, fmtQty, type Conversion } from "./conversions-columns";
 import { printDocumentPdf, fmtPrintNum } from "@/lib/print/document-print";
 
-interface AdjustmentViewModalProps {
+interface ConversionViewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  adjustment: Adjustment | null;
+  conversion: Conversion | null;
   timezone: string;
   appSettings?: {
     appName: string;
@@ -28,74 +28,81 @@ interface AdjustmentViewModalProps {
   };
 }
 
-interface AdjustmentCancelModalProps {
+interface ConversionCancelModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  adjustment: Adjustment | null;
+  conversion: Conversion | null;
   onSuccess: () => void;
 }
 
-export function AdjustmentViewModal({
+export function ConversionViewModal({
   open,
   onOpenChange,
-  adjustment,
+  conversion,
   timezone,
   appSettings,
-}: AdjustmentViewModalProps) {
-  if (!adjustment) return null;
+}: ConversionViewModalProps) {
+  if (!conversion) return null;
 
   const handlePrint = async () => {
-    if (!adjustment) return;
+    if (!conversion) return;
+    const transNo =
+      conversion.transNo || `CNV-${String(conversion.id).padStart(5, "0")}`;
     await printDocumentPdf({
       appSettings,
-      documentNo: adjustment.transNo || `ADJ-${String(adjustment.id).padStart(5, "0")}`,
-      documentNoLabel: "Adjustment No.",
-      title: "ADJUSTMENT",
+      documentNo: transNo,
+      documentNoLabel: "Conversion No.",
+      title: "CONVERSION",
       fieldsLeft: [
-        { label: "Date", value: formatDateOnly(adjustment.date, timezone) },
-        { label: "Location", value: adjustment.locationName },
+        { label: "Date", value: formatDateOnly(conversion.date, timezone) },
+        { label: "Location", value: conversion.locationName },
         {
-          label: "Product",
-          value: `${adjustment.productCode} — ${adjustment.productName}`,
+          label: "From Product",
+          value: `${conversion.fromProductCode} — ${conversion.fromProductName}`,
         },
-        { label: "UOM", value: adjustment.uomName || "-" },
+        { label: "From UOM", value: conversion.fromUomName || "-" },
       ],
       fieldsRight: [
-        { label: "Status", badge: adjustment.status === "Cancelled" ? "Cancelled" : "Completed" },
+        {
+          label: "Status",
+          badge:
+            conversion.status === "Cancelled" ? "Cancelled" : "Completed",
+        },
+        {
+          label: "To Product",
+          value: `${conversion.toProductCode} — ${conversion.toProductName}`,
+        },
+        { label: "To UOM", value: conversion.toUomName || "-" },
       ],
-      sectionTitle: "Adjustment Details",
+      sectionTitle: "Conversion Details",
       tableColumns: [
-        { key: "old", header: "OLD QTY", align: "right", width: 40 },
-        { key: "adj", header: "ADJ QTY", align: "right", width: 40 },
-        { key: "new", header: "NEW QTY", align: "right", width: 40 },
+        { key: "fromQty", header: "FROM QTY", align: "right", width: 40 },
+        { key: "toQty", header: "TO QTY", align: "right", width: 40 },
       ],
       tableRows: [
         {
-          old: fmtPrintNum(adjustment.qtyOld),
-          adj: fmtPrintNum(adjustment.qtyAdj),
-          new: fmtPrintNum(adjustment.qtyNew),
+          fromQty: fmtPrintNum(conversion.fromQty),
+          toQty: fmtPrintNum(conversion.newQty),
         },
       ],
-      remarks: adjustment.remarks,
-      leftSignatureLabel: "Adjusted By:",
-      leftSignatureName: adjustment.createdByDisplay || undefined,
+      remarks: conversion.remarks,
+      leftSignatureLabel: "Converted By:",
+      leftSignatureName: conversion.createdByDisplay || undefined,
       leftSignatureCaption: "Staff Signature",
       rightSignatureLabel: "Verified By:",
       rightSignatureCaption: "Authorized Signature",
       timezone,
-      fileName: `${
-        adjustment.transNo || `ADJ-${String(adjustment.id).padStart(5, "0")}`
-      }.pdf`,
+      fileName: `${transNo}.pdf`,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-sm border-[#ddd] p-0">
+      <DialogContent className="sm:max-w-xl rounded-sm border-[#ddd] p-0">
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#337ab7] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">
-            Adjustment{" "}
-            {adjustment.transNo || `ADJ-${String(adjustment.id).padStart(5, "0")}`}
+            Conversion{" "}
+            {conversion.transNo || `CNV-${String(conversion.id).padStart(5, "0")}`}
           </DialogTitle>
           <button
             onClick={() => onOpenChange(false)}
@@ -107,141 +114,149 @@ export function AdjustmentViewModal({
         <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
           <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
             <dt className="text-xs font-semibold uppercase text-muted-foreground">Date</dt>
-            <dd className="mt-0.5 text-sm font-medium text-foreground">
-              {formatDateOnly(adjustment.date, timezone)}
-            </dd>
-          </div>
-          <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
-            <dt className="text-xs font-semibold uppercase text-muted-foreground">Status</dt>
-            <dd className="mt-1">
-              <span
-                className={`inline-block px-2 py-0.5 text-xs font-medium ${statusBadge(adjustment.status)}`}
-              >
-                {adjustment.status}
-              </span>
+            <dd className="mt-0.5 text-sm font-medium">
+              {formatDateOnly(conversion.date, timezone)}
             </dd>
           </div>
           <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
             <dt className="text-xs font-semibold uppercase text-muted-foreground">
-              Location
+              Status
             </dt>
-            <dd className="mt-0.5 text-sm font-medium text-foreground">
-              {adjustment.locationName}
-            </dd>
-          </div>
-          <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
-            <dt className="text-xs font-semibold uppercase text-muted-foreground">UOM</dt>
-            <dd className="mt-0.5 text-sm font-medium text-foreground">
-              {adjustment.uomName || "-"}
+            <dd className="mt-1">
+              <span
+                className={`inline-block px-2 py-0.5 text-xs font-medium ${statusBadge(conversion.status)}`}
+              >
+                {conversion.status}
+              </span>
             </dd>
           </div>
           <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3 sm:col-span-2">
             <dt className="text-xs font-semibold uppercase text-muted-foreground">
-              Product
+              Location
             </dt>
-            <dd className="mt-0.5 text-sm font-medium text-foreground">
-              {adjustment.productCode} — {adjustment.productName}
+            <dd className="mt-0.5 text-sm font-medium">{conversion.locationName}</dd>
+          </div>
+          <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3 sm:col-span-2">
+            <dt className="text-xs font-semibold uppercase text-muted-foreground">
+              From Product
+            </dt>
+            <dd className="mt-0.5 text-sm font-medium">
+              {conversion.fromProductCode} — {conversion.fromProductName}
             </dd>
           </div>
           <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
             <dt className="text-xs font-semibold uppercase text-muted-foreground">
-              Old Qty
+              From UOM
             </dt>
-            <dd className="mt-0.5 text-sm font-medium text-foreground">
-              {fmtQty(adjustment.qtyOld)}
+            <dd className="mt-0.5 text-sm font-medium">
+              {conversion.fromUomName || "-"}
             </dd>
           </div>
           <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
             <dt className="text-xs font-semibold uppercase text-muted-foreground">
-              Adj Qty
+              From Qty
             </dt>
-            <dd className="mt-0.5 text-sm font-medium text-foreground">
-              {fmtAdj(adjustment.qtyAdj)}
+            <dd className="mt-0.5 text-right text-sm font-medium text-[#d9534f]">
+              {fmtQty(conversion.fromQty)}
+            </dd>
+          </div>
+          <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3 sm:col-span-2">
+            <dt className="text-xs font-semibold uppercase text-muted-foreground">
+              To Product
+            </dt>
+            <dd className="mt-0.5 text-sm font-medium">
+              {conversion.toProductCode} — {conversion.toProductName}
             </dd>
           </div>
           <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
             <dt className="text-xs font-semibold uppercase text-muted-foreground">
-              New Qty
+              To UOM
             </dt>
-            <dd className="mt-0.5 text-sm font-medium text-foreground">
-              {fmtQty(adjustment.qtyNew)}
+            <dd className="mt-0.5 text-sm font-medium">
+              {conversion.toUomName || "-"}
+            </dd>
+          </div>
+          <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
+            <dt className="text-xs font-semibold uppercase text-muted-foreground">
+              To Qty
+            </dt>
+            <dd className="mt-0.5 text-right text-sm font-medium text-[#5cb85c]">
+              {fmtQty(conversion.newQty)}
             </dd>
           </div>
           <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3 sm:col-span-2">
             <dt className="text-xs font-semibold uppercase text-muted-foreground">
               Remarks
             </dt>
-            <dd className="mt-0.5 text-sm font-medium text-foreground">
-              {adjustment.remarks || "-"}
-            </dd>
+            <dd className="mt-0.5 text-sm font-medium">{conversion.remarks || "-"}</dd>
           </div>
-          {adjustment.createdAt && (
+          {conversion.createdAt && (
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">
                 Created At
               </dt>
-              <dd className="mt-0.5 text-sm font-medium text-foreground">
-                {formatDateOnly(adjustment.createdAt, timezone)}
+              <dd className="mt-0.5 text-sm font-medium">
+                {formatDateOnly(conversion.createdAt, timezone)}
               </dd>
             </div>
           )}
-          {adjustment.createdByDisplay && adjustment.createdByDisplay !== "-" && (
+          {conversion.createdByDisplay && conversion.createdByDisplay !== "-" && (
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">
                 Created By
               </dt>
-              <dd className="mt-0.5 text-sm font-medium text-foreground">
-                {adjustment.createdByDisplay}
+              <dd className="mt-0.5 text-sm font-medium">
+                {conversion.createdByDisplay}
               </dd>
             </div>
           )}
-          {adjustment.updatedAt && (
+          {conversion.updatedAt && (
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">
                 Updated At
               </dt>
-              <dd className="mt-0.5 text-sm font-medium text-foreground">
-                {formatDateOnly(adjustment.updatedAt, timezone)}
+              <dd className="mt-0.5 text-sm font-medium">
+                {formatDateOnly(conversion.updatedAt, timezone)}
               </dd>
             </div>
           )}
-          {adjustment.updatedByDisplay && adjustment.updatedByDisplay !== "-" && (
+          {conversion.updatedByDisplay && conversion.updatedByDisplay !== "-" && (
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">
                 Updated By
               </dt>
-              <dd className="mt-0.5 text-sm font-medium text-foreground">
-                {adjustment.updatedByDisplay}
+              <dd className="mt-0.5 text-sm font-medium">
+                {conversion.updatedByDisplay}
               </dd>
             </div>
           )}
-          {adjustment.deletedAt && (
+          {conversion.deletedAt && (
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">
                 Deleted At
               </dt>
-              <dd className="mt-0.5 text-sm font-medium text-foreground">
-                {formatDateOnly(adjustment.deletedAt, timezone)}
+              <dd className="mt-0.5 text-sm font-medium">
+                {formatDateOnly(conversion.deletedAt, timezone)}
               </dd>
             </div>
           )}
-          {adjustment.deletedByDisplay && adjustment.deletedByDisplay !== "-" && (
+          {conversion.deletedByDisplay && conversion.deletedByDisplay !== "-" && (
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">
                 Deleted By
               </dt>
-              <dd className="mt-0.5 text-sm font-medium text-foreground">
-                {adjustment.deletedByDisplay}
+              <dd className="mt-0.5 text-sm font-medium">
+                {conversion.deletedByDisplay}
               </dd>
             </div>
           )}
-          {adjustment.deletedReason && (
+          {conversion.deletedReason && (
             <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3 sm:col-span-2">
               <dt className="text-xs font-semibold uppercase text-muted-foreground">
                 Deleted Reason
               </dt>
-              <dd className="mt-0.5 text-sm font-medium text-foreground">
-                {adjustment.deletedReason}
+              <dd className="mt-0.5 text-sm font-medium">
+                {conversion.deletedReason}
               </dd>
             </div>
           )}
@@ -268,30 +283,30 @@ export function AdjustmentViewModal({
   );
 }
 
-export function AdjustmentCancelModal({
+export function ConversionCancelModal({
   open,
   onOpenChange,
-  adjustment,
+  conversion,
   onSuccess,
-}: AdjustmentCancelModalProps) {
+}: ConversionCancelModalProps) {
   const [loading, setLoading] = useState(false);
   const [reason, setReason] = useState("");
 
   const handleConfirm = async () => {
-    if (!adjustment) return;
+    if (!conversion) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/adjustments/${adjustment.id}`, {
+      const res = await fetch(`/api/conversions/${conversion.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: reason.trim() || undefined }),
       });
       const json = await res.json();
       if (!res.ok) {
-        toast.error(json.error || "Failed to cancel adjustment");
+        toast.error(json.error || "Failed to cancel conversion");
         return;
       }
-      toast.success(json.message || "Adjustment cancelled");
+      toast.success(json.message || "Conversion cancelled");
       setReason("");
       onOpenChange(false);
       onSuccess();
@@ -307,7 +322,7 @@ export function AdjustmentCancelModal({
       <DialogContent className="sm:max-w-md rounded-sm border-[#ddd] p-0">
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#d9534f] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">
-            Cancel Adjustment
+            Cancel Conversion
           </DialogTitle>
           <button
             onClick={() => onOpenChange(false)}
@@ -320,12 +335,10 @@ export function AdjustmentCancelModal({
           <p className="text-sm text-[#333]">
             Cancel{" "}
             <strong className="text-[#337ab7]">
-              {adjustment?.transNo ||
-                (adjustment
-                  ? `ADJ-${String(adjustment.id).padStart(5, "0")}`
-                  : "")}
+              {conversion?.transNo ||
+                (conversion ? `CNV-${String(conversion.id).padStart(5, "0")}` : "")}
             </strong>
-            ? Stock will be reversed (sign of adj qty inverted).
+            ? Stock will be reversed for both products.
           </p>
           <div className="space-y-2">
             <Label className="text-sm font-medium text-[#333]">
@@ -355,7 +368,7 @@ export function AdjustmentCancelModal({
             className="bg-[#d9534f] text-white hover:bg-[#c9302c]"
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Cancel Adjustment
+            Cancel Conversion
           </Button>
         </div>
       </DialogContent>

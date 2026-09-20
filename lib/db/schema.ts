@@ -286,6 +286,37 @@ export const adjustments = pgTable("adjustments", {
   deletedReason: text("deleted_reason"),
 });
 
+export const conversions = pgTable("conversions", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  date: timestamp("date", { withTimezone: true, mode: "date" }).notNull(),
+  locationId: bigint("location_id", { mode: "number" })
+    .notNull()
+    .references(() => locations.id),
+  fromProductId: bigint("from_product_id", { mode: "number" })
+    .notNull()
+    .references(() => products.id),
+  fromUomId: bigint("from_uom_id", { mode: "number" })
+    .notNull()
+    .references(() => uoms.id),
+  fromQty: decimal("from_qty", { precision: 10, scale: 4 }).notNull(),
+  toProductId: bigint("to_product_id", { mode: "number" })
+    .notNull()
+    .references(() => products.id),
+  toUomId: bigint("to_uom_id", { mode: "number" })
+    .notNull()
+    .references(() => uoms.id),
+  newQty: decimal("new_qty", { precision: 10, scale: 4 }).notNull(),
+  remarks: text("remarks"),
+  status: adjustmentStatusEnum("status").notNull().default("Completed"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
 export const suppliers = pgTable("suppliers", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   name: text("name").notNull().unique(),
