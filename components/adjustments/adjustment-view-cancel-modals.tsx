@@ -91,7 +91,7 @@ export function AdjustmentViewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-sm border-[#ddd] p-0">
+      <DialogContent showCloseButton={false} className="flex max-h-[90vh] flex-col rounded-sm border-[#ddd] p-0 sm:max-w-lg">
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#337ab7] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">
             Adjustment{" "}
@@ -104,7 +104,7 @@ export function AdjustmentViewModal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+        <div className="min-h-0 flex-1 grid grid-cols-1 gap-3 overflow-y-auto p-4 sm:grid-cols-2">
           <div className="rounded-sm border border-[#eee] bg-[#fafafa] p-3">
             <dt className="text-xs font-semibold uppercase text-muted-foreground">Date</dt>
             <dd className="mt-0.5 text-sm font-medium text-foreground">
@@ -304,7 +304,7 @@ export function AdjustmentCancelModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-sm border-[#ddd] p-0">
+      <DialogContent showCloseButton={false} className="flex max-h-[90vh] flex-col rounded-sm border-[#ddd] p-0 sm:max-w-md">
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#d9534f] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">
             Cancel Adjustment
@@ -316,7 +316,7 @@ export function AdjustmentCancelModal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="space-y-4 p-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
           <p className="text-sm text-[#333]">
             Cancel{" "}
             <strong className="text-[#337ab7]">

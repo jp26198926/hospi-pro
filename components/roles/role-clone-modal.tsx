@@ -65,14 +65,17 @@ export function RoleCloneModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-sm border-[#ddd] p-0">
+      <DialogContent
+        showCloseButton={false}
+        className="flex max-h-[90vh] flex-col rounded-sm border-[#ddd] p-0 sm:max-w-md"
+      >
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#f0ad4e] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">Clone Role</DialogTitle>
           <button onClick={() => onOpenChange(false)} className="text-white/70 hover:text-white">
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="space-y-4 p-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
           <div className="flex items-center gap-2 rounded-sm bg-[#fef9e7] p-3 border border-[#f0ad4e]/30">
             <Copy className="h-5 w-5 text-[#f0ad4e]" />
             <span className="text-sm text-[#333]">
@@ -92,16 +95,15 @@ export function RoleCloneModal({
               className="border-[#ccc] focus:border-[#337ab7] focus:ring-[#337ab7]"
             />
           </div>
-
-          <div className="flex justify-end gap-2 border-t border-[#eee] pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="border-[#ccc] bg-white text-[#333] hover:bg-[#f5f5f5]">
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={loading} className="bg-[#f0ad4e] text-white hover:bg-[#ec971f]">
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Clone
-            </Button>
-          </div>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-[#eee] bg-[#f8f8f8] px-4 py-3">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-[#ccc] bg-white text-[#333] hover:bg-[#f5f5f5]">
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading} className="bg-[#f0ad4e] text-white hover:bg-[#ec971f]">
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Clone
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

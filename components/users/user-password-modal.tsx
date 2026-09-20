@@ -75,14 +75,15 @@ export function UserPasswordModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-sm border-[#ddd] p-0">
+      <DialogContent showCloseButton={false} className="flex max-h-[90vh] flex-col rounded-sm border-[#ddd] p-0 sm:max-w-md">
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#9b59b6] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">Change Password</DialogTitle>
           <button onClick={() => onOpenChange(false)} className="text-white/70 hover:text-white">
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="space-y-4 p-4">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
           <div className="flex items-center gap-2 rounded-sm bg-[#f5f0ff] p-3">
             <Key className="h-5 w-5 text-[#9b59b6]" />
             <span className="text-sm text-[#333]">Changing password for <strong>{user?.email}</strong></span>
@@ -115,8 +116,9 @@ export function UserPasswordModal({
           </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
+          </div>
 
-          <div className="flex justify-end gap-2 border-t border-[#eee] pt-4">
+          <div className="flex justify-end gap-2 border-t border-[#eee] bg-[#f8f8f8] px-4 py-3">
             <Button variant="outline" onClick={() => onOpenChange(false)} className="border-[#ccc] bg-white text-[#333] hover:bg-[#f5f5f5]">
               Cancel
             </Button>

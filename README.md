@@ -265,7 +265,7 @@ Quick overview:
 1. Add table to `lib/db/schema.ts` — use `bigserial("id", { mode: "number" })` for PKs, `bigint("col", { mode: "number" })` for FKs, `timestamp({ withTimezone: true, mode: "date" })` for timestamps. Include audit fields (createdBy, updatedBy, deletedBy, deletedReason). Display dates with `formatDateOnly`; user audit fields in UI with `formatUserDisplay`; date inputs with `DatePicker`.
 2. Create `lib/validations/<singular>.ts` (zod schemas)
 3. Create `app/api/<plural>/route.ts` + `[id]/route.ts` (with `requirePermission` calls, set audit fields from `auth.userId`)
-4. Create `components/<plural>/` (columns, table, form modal, delete modal, search modal)
+4. Create `components/<plural>/` (columns, table, form modal, delete modal, search modal) — modal shell: `DialogContent` `flex max-h-[90vh] flex-col p-0` + `showCloseButton={false}`; body `min-h-0 flex-1 overflow-y-auto` so header/footer stay pinned
 5. Create `app/(admin)/<plural>/page.tsx` (with `requirePageRead` guard)
 6. Insert row into `pages` table for sidebar registration
 7. Grant View on parent page + Read on new page for roles that should access it

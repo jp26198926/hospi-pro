@@ -95,7 +95,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-sm border-[#ddd] p-0">
+      <DialogContent showCloseButton={false} className="flex max-h-[90vh] flex-col rounded-sm border-[#ddd] p-0 sm:max-w-md">
         <div className="border-b border-[#ddd] bg-[#f8f8f8] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-[#337ab7]">My Profile</DialogTitle>
         </div>
@@ -104,7 +104,8 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
             <div className="space-y-2">
               <Label htmlFor="firstname" className="text-sm font-medium text-[#333]">
                 First Name <span className="text-red-500">*</span>
@@ -168,6 +169,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
               </div>
             </div>
 
+            </div>
             <DialogFooter>
               <Button
                 type="button"

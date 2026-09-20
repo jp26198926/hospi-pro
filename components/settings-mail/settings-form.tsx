@@ -239,11 +239,11 @@ export function SettingsMailForm() {
 
       {/* Saving Loading Modal */}
       <Dialog open={saving} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-xs rounded-sm border-[#ddd] p-0" showCloseButton={false}>
+        <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-xs rounded-sm border-[#ddd] p-0" showCloseButton={false}>
           <div className="flex items-center justify-between border-b border-[#ddd] bg-[#337ab7] px-4 py-3">
             <DialogTitle className="text-sm font-semibold text-white">Saving...</DialogTitle>
           </div>
-          <div className="flex flex-col items-center gap-3 p-6">
+          <div className="flex min-h-0 flex-1 flex-col items-center gap-3 p-6">
             <Loader2 className="h-8 w-8 animate-spin text-[#337ab7]" />
             <p className="text-sm text-[#333]">Saving mail settings, please wait...</p>
           </div>

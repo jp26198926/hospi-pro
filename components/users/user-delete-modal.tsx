@@ -51,14 +51,14 @@ export function UserDeleteModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-sm border-[#ddd] p-0">
+      <DialogContent showCloseButton={false} className="flex max-h-[90vh] flex-col rounded-sm border-[#ddd] p-0 sm:max-w-md">
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#d9534f] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">Delete User</DialogTitle>
           <button onClick={() => onOpenChange(false)} className="text-white/70 hover:text-white">
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertTriangle className="h-5 w-5 text-red-600" />

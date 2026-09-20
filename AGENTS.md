@@ -172,6 +172,8 @@ Hardcoded hex colors, not Tailwind theme tokens — match these exactly:
 
 **Mobile**: DataTables must transpose to card layout below `md` (`hidden md:block` table + `md:hidden` cards). Toolbars stack with `flex-col gap-3 sm:flex-row`. Copy the pattern from `components/roles/` or `components/departments/`.
 
+**Modal scroll shell (standard for all modals)**: pin header + footer; scroll only the body. `DialogContent`: `showCloseButton={false}` + `flex max-h-[90vh] flex-col` + size/border/`p-0`. Body div: `min-h-0 flex-1 overflow-y-auto`. Do not put overflow on the whole dialog. Pattern: `components/conversions/` modals.
+
 **Columns**: Count DataTable data columns only (exclude `#` and `Actions`; include `status` and domain fields). If more than 5 data columns, omit the **Created At** column from `getColumns()` for new modules. `#` and Actions stay. Exports/mobile/detail may still show dates. Reference: products omits Created At; roles/departments keep it as legacy narrow tables.
 
 **Exports**: PDF via `jspdf` + `jspdf-autotable`; Excel via `xlsx`. Include the status column.

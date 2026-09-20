@@ -135,7 +135,7 @@ export function UserFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-sm border-[#ddd] p-0">
+      <DialogContent showCloseButton={false} className="flex max-h-[90vh] flex-col rounded-sm border-[#ddd] p-0 sm:max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#337ab7] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">
@@ -150,7 +150,8 @@ export function UserFormModal({
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="firstname" className="text-sm font-medium text-[#333]">
@@ -237,8 +238,8 @@ export function UserFormModal({
             />
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-end gap-2 border-t border-[#eee] pt-4">
+          </div>
+          <div className="flex justify-end gap-2 border-t border-[#eee] bg-[#f8f8f8] px-4 py-3">
             <Button
               type="button"
               variant="outline"

@@ -54,7 +54,10 @@ export function ConversionSearchModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-sm border-[#ddd] p-0">
+      <DialogContent
+        showCloseButton={false}
+        className="flex max-h-[90vh] flex-col rounded-sm border-[#ddd] p-0 sm:max-w-md"
+      >
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#337ab7] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">
             Advanced Search
@@ -66,7 +69,7 @@ export function ConversionSearchModal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="space-y-4 p-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium text-[#333]">
               Product, Location, or Remarks

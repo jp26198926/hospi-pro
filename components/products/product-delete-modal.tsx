@@ -59,7 +59,7 @@ export function ProductDeleteModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-sm border-[#ddd] p-0">
+      <DialogContent showCloseButton={false} className="flex max-h-[90vh] flex-col rounded-sm border-[#ddd] p-0 sm:max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#ddd] bg-[#d9534f] px-4 py-3">
           <DialogTitle className="text-sm font-semibold text-white">
@@ -74,7 +74,7 @@ export function ProductDeleteModal({
         </div>
 
         {/* Body */}
-        <div className="space-y-4 p-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertTriangle className="h-5 w-5 text-red-600" />
