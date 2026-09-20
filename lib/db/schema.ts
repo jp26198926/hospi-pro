@@ -6,6 +6,8 @@ export const categoryTypeEnum = pgEnum("category_type", ["inventoriable", "consu
 
 export const inventoryStatusEnum = pgEnum("inventory_status", ["Draft", "Completed", "Cancelled"]);
 
+export const adjustmentStatusEnum = pgEnum("adjustment_status", ["Completed", "Cancelled"]);
+
 export const departments = pgTable("departments", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   department: text("department").notNull().unique(),
@@ -249,6 +251,32 @@ export const transferItems = pgTable("transfer_items", {
   dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
   remarks: text("remarks"),
   status: inventoryStatusEnum("status").notNull().default("Draft"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+  createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedBy: bigint("deleted_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  deletedReason: text("deleted_reason"),
+});
+
+export const adjustments = pgTable("adjustments", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  date: timestamp("date", { withTimezone: true, mode: "date" }).notNull(),
+  locationId: bigint("location_id", { mode: "number" })
+    .notNull()
+    .references(() => locations.id),
+  productId: bigint("product_id", { mode: "number" })
+    .notNull()
+    .references(() => products.id),
+  uomId: bigint("uom_id", { mode: "number" })
+    .notNull()
+    .references(() => uoms.id),
+  qtyOld: decimal("qty_old", { precision: 10, scale: 4 }).notNull(),
+  qtyAdj: decimal("qty_adj", { precision: 10, scale: 4 }).notNull(),
+  qtyNew: decimal("qty_new", { precision: 10, scale: 4 }).notNull(),
+  remarks: text("remarks"),
+  status: adjustmentStatusEnum("status").notNull().default("Completed"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),

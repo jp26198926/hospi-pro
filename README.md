@@ -19,6 +19,7 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Receivings — list `/receivings` (**Trans #** `RCV-#####` is **clickable** → detail; list defaults to **Draft**). **Detail `/receivings/[id]`**: master info + items table (Batch #, UOM, Qty/Cost/Total `0.0000`); status actions **Back | Edit | Mark as Completed | Cancel / Print / Restore** on one row; toggle cancelled items; Print via shared `printDocumentPdf`.
 - Releasings — list `/releasings` (**Trans #** `RLS-#####` **clickable** → detail; Draft default). **Detail `/releasings/[id]`**: from/to location + receiver + items (Series `RI-######`, UOM); **barcode scan auto-add** (`5*CODE`); same status actions + print layout as receivings (`RELEASING` / Released By).
 - Transfers — list `/transfers` (**Trans #** `TRAN-#####` **clickable**; Draft default). **Detail `/transfers/[id]`**: both from/to locations **required**; items + scan auto-add (Series `TI-######`); Complete moves stock **from→to** on `stock_levels` only (**no** `products.stock` update); print via `printDocumentPdf` (TRANSFER).
+- Adjustments — `/adjustments` single-line stock adj **`ADJ-#####`**; **UOM** from product (`uom_id` FK); `qty_new = qty_old + qty_adj`; Add modal shows **UOM + Old/New qty** after product pick; save posts **Completed** immediately; **View modal** (2-col layout; Product/Remarks full width) + Print; Cancel reverses stock sign; list defaults Completed.
 - GST Types management
 - Suppliers management (with audit trail)
 - Products management (editable product codes with optional next-code prefill, required UOM + GST type FKs, optional category, stock/cost tracking)
@@ -110,7 +111,9 @@ app/
 │   ├── stock-levels/      # read-only qty by product/location
 │   ├── stock-movements/   # read-only inventory trail
 │   ├── suppliers/
+│   ├── transfers/         # list + [id] detail
 │   ├── trans-types/
+│   ├── adjustments/       # list + view/cancel modals
 │   ├── uoms/
 │   └── users/
 ├── (auth)/               # Public auth pages
