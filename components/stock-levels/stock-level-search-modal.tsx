@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Search, X } from "lucide-react";
 
@@ -20,7 +21,12 @@ interface LocationOption {
 interface StockLevelSearchModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSearch: (term: string, locationId: string) => void;
+  onSearch: (
+    term: string,
+    locationId: string,
+    dateFrom: string,
+    dateTo: string
+  ) => void;
   locationOptions: LocationOption[];
 }
 
@@ -32,16 +38,20 @@ export function StockLevelSearchModal({
 }: StockLevelSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const handleSearch = () => {
-    onSearch(searchTerm, locationFilter);
+    onSearch(searchTerm, locationFilter, dateFrom, dateTo);
     onOpenChange(false);
   };
 
   const handleClear = () => {
     setSearchTerm("");
     setLocationFilter("all");
-    onSearch("", "all");
+    setDateFrom("");
+    setDateTo("");
+    onSearch("", "all", "", "");
     onOpenChange(false);
   };
 
@@ -87,6 +97,36 @@ export function StockLevelSearchModal({
               allLabel="All"
               placeholder="All locations"
             />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label
+                htmlFor="date-from"
+                className="text-sm font-medium text-[#333]"
+              >
+                Date From
+              </Label>
+              <DatePicker
+                id="date-from"
+                value={dateFrom}
+                onValueChange={setDateFrom}
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label
+                htmlFor="date-to"
+                className="text-sm font-medium text-[#333]"
+              >
+                Date To
+              </Label>
+              <DatePicker
+                id="date-to"
+                value={dateTo}
+                onValueChange={setDateTo}
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
           </div>
         </div>
 

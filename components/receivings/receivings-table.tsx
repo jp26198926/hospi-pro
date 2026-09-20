@@ -52,6 +52,8 @@ export function ReceivingsTable({ timezone }: { timezone: string }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Draft");
   const [supplierFilter, setSupplierFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [supplierOptions, setSupplierOptions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -101,6 +103,8 @@ export function ReceivingsTable({ timezone }: { timezone: string }) {
       if (search) params.set("search", search);
       params.set("status", statusFilter);
       if (supplierFilter !== "all") params.set("supplierId", supplierFilter);
+      if (dateFrom) params.set("dateFrom", dateFrom);
+      if (dateTo) params.set("dateTo", dateTo);
 
       const res = await fetch(`/api/receivings?${params}`);
       const json = await res.json();
@@ -113,7 +117,7 @@ export function ReceivingsTable({ timezone }: { timezone: string }) {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, sorting, search, statusFilter, supplierFilter]);
+  }, [page, limit, sorting, search, statusFilter, supplierFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchData();
@@ -423,10 +427,12 @@ export function ReceivingsTable({ timezone }: { timezone: string }) {
         open={searchOpen}
         onOpenChange={setSearchOpen}
         supplierOptions={supplierOptions}
-        onSearch={(term, status, supId) => {
+        onSearch={(term, status, supId, from, to) => {
           setSearch(term);
           setStatusFilter(status);
           setSupplierFilter(supId);
+          setDateFrom(from);
+          setDateTo(to);
           setPage(1);
         }}
       />

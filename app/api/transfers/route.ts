@@ -5,7 +5,7 @@ import { transfers, locations, users } from "@/lib/db/schema";
 import { transferSchema } from "@/lib/validations/transfer";
 import { formatTransferNo } from "@/lib/validations/transfer-item";
 import { formatUserDisplay } from "@/lib/format-user";
-import { eq, desc, asc, ilike, and, or, count as drizzleCount } from "drizzle-orm";
+import { eq, desc, asc, ilike, and, or, gte, lte, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
 
 const locFrom = alias(locations, "loc_from");
@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || "Draft";
     const fromLocationId = searchParams.get("fromLocationId") || "";
     const toLocationId = searchParams.get("toLocationId") || "";
+    const dateFrom = searchParams.get("dateFrom") || "";
+    const dateTo = searchParams.get("dateTo") || "";
 
     const conditions = [];
     if (status === "Draft" || status === "Completed" || status === "Cancelled") {
@@ -35,6 +37,18 @@ export async function GET(request: NextRequest) {
     }
     if (toLocationId && toLocationId !== "all") {
       conditions.push(eq(transfers.toLocationId, parseInt(toLocationId)));
+    }
+    if (dateFrom) {
+      const from = new Date(`${dateFrom}T00:00:00.000Z`);
+      if (!Number.isNaN(from.getTime())) {
+        conditions.push(gte(transfers.date, from));
+      }
+    }
+    if (dateTo) {
+      const to = new Date(`${dateTo}T23:59:59.999Z`);
+      if (!Number.isNaN(to.getTime())) {
+        conditions.push(lte(transfers.date, to));
+      }
     }
     if (search) {
       conditions.push(

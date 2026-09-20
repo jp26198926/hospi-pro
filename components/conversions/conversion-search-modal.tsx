@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Search, X } from "lucide-react";
 
@@ -25,7 +26,13 @@ interface SelectOption {
 interface ConversionSearchModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSearch: (term: string, status: string, locationId: string) => void;
+  onSearch: (
+    term: string,
+    status: string,
+    locationId: string,
+    dateFrom: string,
+    dateTo: string
+  ) => void;
   locationOptions: SelectOption[];
 }
 
@@ -38,9 +45,11 @@ export function ConversionSearchModal({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Completed");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const handleSearch = () => {
-    onSearch(searchTerm, statusFilter, locationFilter);
+    onSearch(searchTerm, statusFilter, locationFilter, dateFrom, dateTo);
     onOpenChange(false);
   };
 
@@ -48,7 +57,9 @@ export function ConversionSearchModal({
     setSearchTerm("");
     setStatusFilter("Completed");
     setLocationFilter("all");
-    onSearch("", "Completed", "all");
+    setDateFrom("");
+    setDateTo("");
+    onSearch("", "Completed", "all", "", "");
     onOpenChange(false);
   };
 
@@ -91,6 +102,36 @@ export function ConversionSearchModal({
               allOption
               allLabel="All"
             />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label
+                htmlFor="date-from"
+                className="text-sm font-medium text-[#333]"
+              >
+                Date From
+              </Label>
+              <DatePicker
+                id="date-from"
+                value={dateFrom}
+                onValueChange={setDateFrom}
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label
+                htmlFor="date-to"
+                className="text-sm font-medium text-[#333]"
+              >
+                Date To
+              </Label>
+              <DatePicker
+                id="date-to"
+                value={dateTo}
+                onValueChange={setDateTo}
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label className="text-sm font-medium text-[#333]">Status</Label>

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { stockLevels, products, locations, users } from "@/lib/db/schema";
-import { eq, desc, asc, ilike, and, or, count as drizzleCount } from "drizzle-orm";
+import { eq, desc, asc, ilike, and, or, gte, lte, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
 import { formatUserDisplay } from "@/lib/format-user";
 
@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const productId = searchParams.get("productId") || "";
     const locationId = searchParams.get("locationId") || "";
+    const dateFrom = searchParams.get("dateFrom") || "";
+    const dateTo = searchParams.get("dateTo") || "";
 
     const conditions = [];
     if (productId && productId !== "all") {
@@ -25,6 +27,18 @@ export async function GET(request: NextRequest) {
     }
     if (locationId && locationId !== "all") {
       conditions.push(eq(stockLevels.locationId, parseInt(locationId)));
+    }
+    if (dateFrom) {
+      const from = new Date(`${dateFrom}T00:00:00.000Z`);
+      if (!Number.isNaN(from.getTime())) {
+        conditions.push(gte(stockLevels.updatedAt, from));
+      }
+    }
+    if (dateTo) {
+      const to = new Date(`${dateTo}T23:59:59.999Z`);
+      if (!Number.isNaN(to.getTime())) {
+        conditions.push(lte(stockLevels.updatedAt, to));
+      }
     }
     if (search) {
       conditions.push(

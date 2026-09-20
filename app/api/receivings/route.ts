@@ -4,7 +4,7 @@ import { receivings, suppliers, users } from "@/lib/db/schema";
 import { receivingSchema } from "@/lib/validations/receiving";
 import { formatReceivingNo } from "@/lib/validations/receiving-item";
 import { formatUserDisplay } from "@/lib/receivings";
-import { eq, desc, asc, ilike, and, or, count as drizzleCount } from "drizzle-orm";
+import { eq, desc, asc, ilike, and, or, gte, lte, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const status = searchParams.get("status") || "all";
     const supplierId = searchParams.get("supplierId") || "";
+    const dateFrom = searchParams.get("dateFrom") || "";
+    const dateTo = searchParams.get("dateTo") || "";
 
     const conditions = [];
     if (status === "Draft" || status === "Completed" || status === "Cancelled") {
@@ -27,6 +29,18 @@ export async function GET(request: NextRequest) {
     }
     if (supplierId && supplierId !== "all") {
       conditions.push(eq(receivings.supplierId, parseInt(supplierId)));
+    }
+    if (dateFrom) {
+      const from = new Date(`${dateFrom}T00:00:00.000Z`);
+      if (!Number.isNaN(from.getTime())) {
+        conditions.push(gte(receivings.date, from));
+      }
+    }
+    if (dateTo) {
+      const to = new Date(`${dateTo}T23:59:59.999Z`);
+      if (!Number.isNaN(to.getTime())) {
+        conditions.push(lte(receivings.date, to));
+      }
     }
     if (search) {
       conditions.push(

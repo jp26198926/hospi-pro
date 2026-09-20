@@ -4,7 +4,7 @@ import { conversions, locations, products, uoms, users } from "@/lib/db/schema";
 import { conversionSchema, formatConversionNo } from "@/lib/validations/conversion";
 import { createConversion } from "@/lib/conversion-stock";
 import { formatUserDisplay } from "@/lib/format-user";
-import { eq, desc, asc, ilike, and, or, inArray, count as drizzleCount } from "drizzle-orm";
+import { eq, desc, asc, ilike, and, or, inArray, gte, lte, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
 
 const fromProd = products;
@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get("sortOrder") || "desc";
     const status = searchParams.get("status") || "Completed";
     const locationId = searchParams.get("locationId") || "";
+    const dateFrom = searchParams.get("dateFrom") || "";
+    const dateTo = searchParams.get("dateTo") || "";
 
     void fromProd;
     void toProd;
@@ -44,6 +46,18 @@ export async function GET(request: NextRequest) {
     }
     if (locationId && locationId !== "all") {
       conditions.push(eq(conversions.locationId, parseInt(locationId)));
+    }
+    if (dateFrom) {
+      const from = new Date(`${dateFrom}T00:00:00.000Z`);
+      if (!Number.isNaN(from.getTime())) {
+        conditions.push(gte(conversions.date, from));
+      }
+    }
+    if (dateTo) {
+      const to = new Date(`${dateTo}T23:59:59.999Z`);
+      if (!Number.isNaN(to.getTime())) {
+        conditions.push(lte(conversions.date, to));
+      }
     }
     if (search) {
       conditions.push(

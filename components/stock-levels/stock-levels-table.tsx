@@ -51,6 +51,8 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
 
@@ -91,6 +93,8 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
       });
       if (search) params.set("search", search);
       if (locationFilter !== "all") params.set("locationId", locationFilter);
+      if (dateFrom) params.set("dateFrom", dateFrom);
+      if (dateTo) params.set("dateTo", dateTo);
 
       const res = await fetch(`/api/stock-levels?${params}`);
       const json = await res.json();
@@ -104,7 +108,7 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, sorting, search, locationFilter]);
+  }, [page, limit, sorting, search, locationFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchData();
@@ -383,9 +387,11 @@ export function StockLevelsTable({ timezone }: { timezone: string }) {
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
         locationOptions={locationOptions}
-        onSearch={(term, locId) => {
+        onSearch={(term, locId, from, to) => {
           setSearch(term);
           setLocationFilter(locId);
+          setDateFrom(from);
+          setDateTo(to);
           setPage(1);
         }}
       />

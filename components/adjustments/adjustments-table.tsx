@@ -71,6 +71,8 @@ export function AdjustmentsTable({ timezone, appSettings }: AdjustmentsTableProp
   const [statusFilter, setStatusFilter] = useState("Completed");
   const [locationFilter, setLocationFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [locationOptions, setLocationOptions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -138,6 +140,8 @@ export function AdjustmentsTable({ timezone, appSettings }: AdjustmentsTableProp
       if (search) params.set("search", search);
       if (locationFilter !== "all") params.set("locationId", locationFilter);
       if (productFilter !== "all") params.set("productId", productFilter);
+      if (dateFrom) params.set("dateFrom", dateFrom);
+      if (dateTo) params.set("dateTo", dateTo);
 
       const res = await fetch(`/api/adjustments?${params}`);
       const json = await res.json();
@@ -150,7 +154,7 @@ export function AdjustmentsTable({ timezone, appSettings }: AdjustmentsTableProp
     } finally {
       setLoading(false);
     }
-  }, [page, limit, sorting, search, statusFilter, locationFilter, productFilter]);
+  }, [page, limit, sorting, search, statusFilter, locationFilter, productFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchData();
@@ -481,11 +485,13 @@ export function AdjustmentsTable({ timezone, appSettings }: AdjustmentsTableProp
         onOpenChange={setSearchOpen}
         locationOptions={locationOptions}
         productOptions={productOptions}
-        onSearch={(term, status, loc, prod) => {
+        onSearch={(term, status, loc, prod, from, to) => {
           setSearch(term);
           setStatusFilter(status);
           setLocationFilter(loc);
           setProductFilter(prod);
+          setDateFrom(from);
+          setDateTo(to);
           setPage(1);
         }}
       />

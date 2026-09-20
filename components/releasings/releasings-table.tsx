@@ -53,6 +53,8 @@ export function ReleasingsTable({ timezone }: { timezone: string }) {
   const [statusFilter, setStatusFilter] = useState("Draft");
   const [fromFilter, setFromFilter] = useState("all");
   const [toFilter, setToFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [locationOptions, setLocationOptions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -101,6 +103,8 @@ export function ReleasingsTable({ timezone }: { timezone: string }) {
       if (search) params.set("search", search);
       if (fromFilter !== "all") params.set("fromLocationId", fromFilter);
       if (toFilter !== "all") params.set("toLocationId", toFilter);
+      if (dateFrom) params.set("dateFrom", dateFrom);
+      if (dateTo) params.set("dateTo", dateTo);
 
       const res = await fetch(`/api/releasings?${params}`);
       const json = await res.json();
@@ -113,7 +117,7 @@ export function ReleasingsTable({ timezone }: { timezone: string }) {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, sorting, search, statusFilter, fromFilter, toFilter]);
+  }, [page, limit, sorting, search, statusFilter, fromFilter, toFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchData();
@@ -419,11 +423,13 @@ export function ReleasingsTable({ timezone }: { timezone: string }) {
         open={searchOpen}
         onOpenChange={setSearchOpen}
         locationOptions={locationOptions}
-        onSearch={(term, status, from, to) => {
+        onSearch={(term, status, fromLoc, toLoc, from, to) => {
           setSearch(term);
           setStatusFilter(status);
-          setFromFilter(from);
-          setToFilter(to);
+          setFromFilter(fromLoc);
+          setToFilter(toLoc);
+          setDateFrom(from);
+          setDateTo(to);
           setPage(1);
         }}
       />

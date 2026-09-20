@@ -4,7 +4,7 @@ import { adjustments, locations, products, uoms, users } from "@/lib/db/schema";
 import { adjustmentSchema, formatAdjustmentNo } from "@/lib/validations/adjustment";
 import { createAdjustment } from "@/lib/adjustment-stock";
 import { formatUserDisplay } from "@/lib/format-user";
-import { eq, desc, asc, ilike, and, or, inArray, count as drizzleCount } from "drizzle-orm";
+import { eq, desc, asc, ilike, and, or, inArray, gte, lte, count as drizzleCount } from "drizzle-orm";
 import { requirePermission } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || "Completed";
     const locationId = searchParams.get("locationId") || "";
     const productId = searchParams.get("productId") || "";
+    const dateFrom = searchParams.get("dateFrom") || "";
+    const dateTo = searchParams.get("dateTo") || "";
 
     const conditions = [];
     if (status === "Completed" || status === "Cancelled") {
@@ -31,6 +33,18 @@ export async function GET(request: NextRequest) {
     }
     if (productId && productId !== "all") {
       conditions.push(eq(adjustments.productId, parseInt(productId)));
+    }
+    if (dateFrom) {
+      const from = new Date(`${dateFrom}T00:00:00.000Z`);
+      if (!Number.isNaN(from.getTime())) {
+        conditions.push(gte(adjustments.date, from));
+      }
+    }
+    if (dateTo) {
+      const to = new Date(`${dateTo}T23:59:59.999Z`);
+      if (!Number.isNaN(to.getTime())) {
+        conditions.push(lte(adjustments.date, to));
+      }
     }
     if (search) {
       conditions.push(

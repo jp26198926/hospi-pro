@@ -69,6 +69,8 @@ export function ConversionsTable({ timezone, appSettings }: ConversionsTableProp
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Completed");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [locationOptions, setLocationOptions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -118,6 +120,8 @@ export function ConversionsTable({ timezone, appSettings }: ConversionsTableProp
       });
       if (search) params.set("search", search);
       if (locationFilter !== "all") params.set("locationId", locationFilter);
+      if (dateFrom) params.set("dateFrom", dateFrom);
+      if (dateTo) params.set("dateTo", dateTo);
 
       const res = await fetch(`/api/conversions?${params}`);
       const json = await res.json();
@@ -130,7 +134,7 @@ export function ConversionsTable({ timezone, appSettings }: ConversionsTableProp
     } finally {
       setLoading(false);
     }
-  }, [page, limit, sorting, search, statusFilter, locationFilter]);
+  }, [page, limit, sorting, search, statusFilter, locationFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchData();
@@ -462,10 +466,12 @@ export function ConversionsTable({ timezone, appSettings }: ConversionsTableProp
         open={searchOpen}
         onOpenChange={setSearchOpen}
         locationOptions={locationOptions}
-        onSearch={(term, status, loc) => {
+        onSearch={(term, status, loc, from, to) => {
           setSearch(term);
           setStatusFilter(status);
           setLocationFilter(loc);
+          setDateFrom(from);
+          setDateTo(to);
           setPage(1);
         }}
       />

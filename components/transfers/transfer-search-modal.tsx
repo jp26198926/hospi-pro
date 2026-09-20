@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Search, X } from "lucide-react";
 
@@ -30,7 +31,9 @@ interface TransferSearchModalProps {
     term: string,
     status: string,
     fromLocationId: string,
-    toLocationId: string
+    toLocationId: string,
+    dateFrom: string,
+    dateTo: string
   ) => void;
   locationOptions: SelectOption[];
 }
@@ -45,9 +48,11 @@ export function TransferSearchModal({
   const [statusFilter, setStatusFilter] = useState("Draft");
   const [fromFilter, setFromFilter] = useState("all");
   const [toFilter, setToFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const handleSearch = () => {
-    onSearch(searchTerm, statusFilter, fromFilter, toFilter);
+    onSearch(searchTerm, statusFilter, fromFilter, toFilter, dateFrom, dateTo);
     onOpenChange(false);
   };
 
@@ -56,7 +61,9 @@ export function TransferSearchModal({
     setStatusFilter("Draft");
     setFromFilter("all");
     setToFilter("all");
-    onSearch("", "Draft", "all", "all");
+    setDateFrom("");
+    setDateTo("");
+    onSearch("", "Draft", "all", "all", "", "");
     onOpenChange(false);
   };
 
@@ -106,6 +113,36 @@ export function TransferSearchModal({
               allOption
               allLabel="All"
             />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label
+                htmlFor="date-from"
+                className="text-sm font-medium text-[#333]"
+              >
+                Date From
+              </Label>
+              <DatePicker
+                id="date-from"
+                value={dateFrom}
+                onValueChange={setDateFrom}
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label
+                htmlFor="date-to"
+                className="text-sm font-medium text-[#333]"
+              >
+                Date To
+              </Label>
+              <DatePicker
+                id="date-to"
+                value={dateTo}
+                onValueChange={setDateTo}
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label className="text-sm font-medium text-[#333]">Status</Label>
