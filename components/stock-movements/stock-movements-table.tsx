@@ -46,7 +46,7 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
   const [data, setData] = useState<StockMovement[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(20);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -101,7 +101,11 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
     setLoading(true);
     try {
       const sortBy = sorting[0]?.id || "date";
-      const sortOrder = sorting[0]?.desc ? "desc" : "asc";
+      const sortOrder = sorting[0]
+        ? sorting[0].desc
+          ? "desc"
+          : "asc"
+        : "desc";
       const params = new URLSearchParams({
         page: String(page),
         limit: String(limit),
@@ -380,7 +384,7 @@ export function StockMovementsTable({ timezone }: { timezone: string }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[10, 25, 50, 100].map((n) => (
+              {[20, 25, 50, 100].map((n) => (
                 <SelectItem key={n} value={String(n)}>
                   {n}
                 </SelectItem>

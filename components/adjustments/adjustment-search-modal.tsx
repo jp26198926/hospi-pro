@@ -46,7 +46,7 @@ export function AdjustmentSearchModal({
   productOptions,
 }: AdjustmentSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Completed");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
@@ -59,12 +59,12 @@ export function AdjustmentSearchModal({
 
   const handleClear = () => {
     setSearchTerm("");
-    setStatusFilter("Completed");
+    setStatusFilter("all");
     setLocationFilter("all");
     setProductFilter("all");
     setDateFrom("");
     setDateTo("");
-    onSearch("", "Completed", "all", "all", "", "");
+    onSearch("", "all", "all", "all", "", "");
     onOpenChange(false);
   };
 

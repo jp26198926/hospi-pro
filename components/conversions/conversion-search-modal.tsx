@@ -43,7 +43,7 @@ export function ConversionSearchModal({
   locationOptions,
 }: ConversionSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Completed");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -59,7 +59,7 @@ export function ConversionSearchModal({
     setLocationFilter("all");
     setDateFrom("");
     setDateTo("");
-    onSearch("", "Completed", "all", "", "");
+    onSearch("", "all", "all", "", "");
     onOpenChange(false);
   };
 
