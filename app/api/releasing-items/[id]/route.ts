@@ -73,6 +73,7 @@ export async function PUT(
       .set({
         productId: parsed.data.productId,
         qty: parsed.data.qty.toFixed(4),
+        batchId: parsed.data.batchId ?? null,
         dateExpiry: parsed.data.dateExpiry || null,
         remarks: parsed.data.remarks || null,
         updatedAt: new Date(),

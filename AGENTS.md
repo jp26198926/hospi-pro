@@ -112,6 +112,8 @@ Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`,
 
 **`report-inventory`** (report-only, **no migration**): path **`/report-inventory`**. Aggregates **`stock_movements`** by product×location — **Beg. Bal / In / Out / End. Bal** (`0.0000`). Beg = sum(qty) **before** dateFrom; In/Out = signed sums in range; End = Beg+In−Out. GET **`/api/report-inventory`** only (`requirePermission` Read). UI: filter card (DatePicker + Location/Category/Product SearchableSelect) + Generate/Reset + PDF/Excel. Menu seeded in `pages` (icon `file-text`); Admin View+Read on pageId 32. Reference UI pattern: report module — no CRUD modals.
 
+**FEFO inventory (implemented)**: lots in **`inventory_batches`** (`productId`+`locationId`+`batchNo` unique, `dateExpiry`, `qty`). Receiving complete upserts lots from item `batchNo` (or `BATCH-{itemId}`) + `dateExpiry`. Releasing complete uses **`consumeFefo`** (`lib/fefo.ts`) — earliest expiry first, **null expiry last** — optional `releasing_items.batchId` pins a lot; else auto. Allocations in **`releasing_item_batches`** / **`transfer_item_batches`**. Transfers/adjustments/conversions lot-aware. `stock_movements.batchId`/`batchNo` tagged. Invariant: sum(batches) = `stock_levels.qty`. Scan remains product-only; Complete does FEFO. Reset data: `npm run db:truncate-inventory`. Study: `FEFO-STUDY.md`.
+
 **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
 
 ## CRUD module pattern

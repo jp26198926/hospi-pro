@@ -42,6 +42,7 @@ export function ReceivingItemFormModal({
   const [productId, setProductId] = useState("");
   const [qty, setQty] = useState("0");
   const [unitCost, setUnitCost] = useState("0");
+  const [batchNo, setBatchNo] = useState("");
   const [dateExpiry, setDateExpiry] = useState("");
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
@@ -57,6 +58,7 @@ export function ReceivingItemFormModal({
         setProductId(String(item.productId));
         setQty(String(Number(item.qty)));
         setUnitCost(String(Number(item.unitCost)));
+        setBatchNo(item.batchNo || "");
         setDateExpiry(
           item.dateExpiry ? formatDateOnly(item.dateExpiry, "UTC") : ""
         );
@@ -65,6 +67,7 @@ export function ReceivingItemFormModal({
         setProductId("");
         setQty("0");
         setUnitCost("0");
+        setBatchNo("");
         setDateExpiry("");
         setRemarks("");
       }
@@ -114,6 +117,7 @@ export function ReceivingItemFormModal({
         productId: Number(productId),
         qty: Number(qty) || 0,
         unitCost: Number(unitCost) || 0,
+        batchNo: batchNo.trim() || null,
         dateExpiry: dateExpiry || null,
         remarks: remarks.trim() || null,
       };
@@ -192,6 +196,15 @@ export function ReceivingItemFormModal({
           <div className="space-y-2">
             <Label className="text-sm font-medium text-[#333]">Total Cost</Label>
             <Input value={total.toFixed(4)} readOnly className="bg-[#f8f8f8]" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-[#333]">Batch No</Label>
+            <Input
+              value={batchNo}
+              onChange={(e) => setBatchNo(e.target.value)}
+              placeholder="Optional"
+              className="border-[#ccc] focus:border-[#337ab7] focus:ring-[#337ab7]"
+            />
           </div>
           <div className="space-y-2">
             <Label className="text-sm font-medium text-[#333]">Expiry</Label>

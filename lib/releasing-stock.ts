@@ -5,18 +5,12 @@ import {
   products,
   stockLevels,
   stockMovements,
+  releasingItemBatches,
+  inventoryBatches,
 } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getTransTypeIdByName, releasingRef } from "@/lib/releasings";
-
-function toNum(v: string | number | null | undefined): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function fmt(n: number): string {
-  return n.toFixed(4);
-}
+import { consumeFefo, fmtQty, toNum } from "@/lib/fefo";
 
 export async function completeReleasing(releasingId: number, userId: number) {
   const releasingTypeId = await getTransTypeIdByName("Releasing");
@@ -51,6 +45,39 @@ export async function completeReleasing(releasingId: number, userId: number) {
         throw new Error(`Item ${item.id} qty must be greater than 0`);
       }
 
+      const takes = await consumeFefo(tx, {
+        productId: item.productId,
+        locationId: master.fromLocationId,
+        need: qty,
+        preferredBatchId: item.batchId ?? null,
+      });
+
+      for (const take of takes) {
+        await tx.insert(releasingItemBatches).values({
+          releasingItemId: item.id,
+          releasingId: master.id,
+          batchId: take.batchId,
+          batchNo: take.batchNo,
+          dateExpiry: take.dateExpiry,
+          qty: fmtQty(take.qty),
+        });
+
+        await tx.insert(stockMovements).values({
+          date: master.date,
+          transTypeId: releasingTypeId,
+          productId: item.productId,
+          locationId: master.fromLocationId,
+          qty: fmtQty(-take.qty),
+          referenceTransId: master.id,
+          referenceItemId: item.id,
+          referenceDescription: releasingRef(master.id, item.id),
+          batchId: take.batchId,
+          batchNo: take.batchNo,
+          remarks: item.remarks || master.remarks || null,
+          createdBy: userId,
+        });
+      }
+
       const [level] = await tx
         .select()
         .from(stockLevels)
@@ -60,31 +87,12 @@ export async function completeReleasing(releasingId: number, userId: number) {
             eq(stockLevels.locationId, master.fromLocationId)
           )
         );
-      const available = level ? toNum(level.qty) : 0;
-      if (available < qty) {
-        throw new Error(
-          `Insufficient stock for item ${item.id}. Available: ${fmt(available)}`
-        );
-      }
-
-      await tx.insert(stockMovements).values({
-        date: master.date,
-        transTypeId: releasingTypeId,
-        productId: item.productId,
-        locationId: master.fromLocationId,
-        qty: fmt(-qty),
-        referenceTransId: master.id,
-        referenceItemId: item.id,
-        referenceDescription: releasingRef(master.id, item.id),
-        remarks: item.remarks || master.remarks || null,
-        createdBy: userId,
-      });
 
       if (level) {
         await tx
           .update(stockLevels)
           .set({
-            qty: fmt(toNum(level.qty) - qty),
+            qty: fmtQty(toNum(level.qty) - qty),
             updatedAt: new Date(),
             updatedBy: userId,
           })
@@ -100,7 +108,7 @@ export async function completeReleasing(releasingId: number, userId: number) {
         const prevQty = toNum(product.stock);
         await tx
           .update(products)
-          .set({ stock: fmt(Math.max(0, prevQty - qty)) })
+          .set({ stock: fmtQty(Math.max(0, prevQty - qty)) })
           .where(eq(products.id, item.productId));
       }
 
@@ -150,18 +158,58 @@ export async function cancelCompletedReleasing(
     for (const item of items) {
       const qty = toNum(item.qty);
 
-      await tx.insert(stockMovements).values({
-        date: new Date(),
-        transTypeId: cancelTypeId,
-        productId: item.productId,
-        locationId: master.fromLocationId,
-        qty: fmt(qty),
-        referenceTransId: master.id,
-        referenceItemId: item.id,
-        referenceDescription: releasingRef(master.id, item.id),
-        remarks: deletedReason || "Releasing cancelled",
-        createdBy: userId,
-      });
+      const allocs = await tx
+        .select()
+        .from(releasingItemBatches)
+        .where(eq(releasingItemBatches.releasingItemId, item.id));
+
+      if (allocs.length > 0) {
+        for (const alloc of allocs) {
+          const takeQty = toNum(alloc.qty);
+          const [batch] = await tx
+            .select()
+            .from(inventoryBatches)
+            .where(eq(inventoryBatches.id, alloc.batchId));
+          if (batch) {
+            await tx
+              .update(inventoryBatches)
+              .set({
+                qty: fmtQty(toNum(batch.qty) + takeQty),
+                updatedAt: new Date(),
+                updatedBy: userId,
+              })
+              .where(eq(inventoryBatches.id, batch.id));
+          }
+
+          await tx.insert(stockMovements).values({
+            date: new Date(),
+            transTypeId: cancelTypeId,
+            productId: item.productId,
+            locationId: master.fromLocationId,
+            qty: fmtQty(takeQty),
+            referenceTransId: master.id,
+            referenceItemId: item.id,
+            referenceDescription: releasingRef(master.id, item.id),
+            batchId: alloc.batchId,
+            batchNo: alloc.batchNo,
+            remarks: deletedReason || "Releasing cancelled",
+            createdBy: userId,
+          });
+        }
+      } else {
+        await tx.insert(stockMovements).values({
+          date: new Date(),
+          transTypeId: cancelTypeId,
+          productId: item.productId,
+          locationId: master.fromLocationId,
+          qty: fmtQty(qty),
+          referenceTransId: master.id,
+          referenceItemId: item.id,
+          referenceDescription: releasingRef(master.id, item.id),
+          remarks: deletedReason || "Releasing cancelled",
+          createdBy: userId,
+        });
+      }
 
       const [level] = await tx
         .select()
@@ -177,7 +225,7 @@ export async function cancelCompletedReleasing(
         await tx
           .update(stockLevels)
           .set({
-            qty: fmt(toNum(level.qty) + qty),
+            qty: fmtQty(toNum(level.qty) + qty),
             updatedAt: new Date(),
             updatedBy: userId,
           })
@@ -192,7 +240,7 @@ export async function cancelCompletedReleasing(
       if (product) {
         await tx
           .update(products)
-          .set({ stock: fmt(toNum(product.stock) + qty) })
+          .set({ stock: fmtQty(toNum(product.stock) + qty) })
           .where(eq(products.id, item.productId));
       }
 
@@ -242,7 +290,6 @@ export async function getDraftItemsQty(
   productId: number,
   excludeItemId?: number
 ): Promise<number> {
-  const { inArray } = await import("drizzle-orm");
   const rows = await db
     .select()
     .from(releasingItems)

@@ -246,6 +246,7 @@ export function ReleasingDetailClient({
               <ReleasingItemsTable
                 releasingId={releasing.id}
                 masterStatus={releasing.status}
+                locationId={releasing.fromLocationId}
                 timezone={timezone}
                 onMutated={refresh}
                 reloadKey={itemsReloadKey}

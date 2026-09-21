@@ -5,18 +5,11 @@ import {
   products,
   stockLevels,
   stockMovements,
+  inventoryBatches,
 } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getTransTypeIdByName, receivingRef } from "@/lib/receivings";
-
-function toNum(v: string | number | null | undefined): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function fmt(n: number): string {
-  return n.toFixed(4);
-}
+import { consumeFefo, defaultBatchNo, fmtQty, toNum, upsertInventoryBatch } from "@/lib/fefo";
 
 export async function completeReceiving(receivingId: number, userId: number) {
   const receivingTypeId = await getTransTypeIdByName("Receiving");
@@ -51,16 +44,31 @@ export async function completeReceiving(receivingId: number, userId: number) {
     for (const item of draftItems) {
       const qty = toNum(item.qty);
       const unitCost = toNum(item.unitCost);
+      const batchNo = (item.batchNo || "").trim() || defaultBatchNo("BATCH", item.id);
+
+      const batch = await upsertInventoryBatch(tx, {
+        productId: item.productId,
+        locationId: master.locationId,
+        batchNo,
+        dateExpiry: item.dateExpiry,
+        qtyDelta: qty,
+        unitCost,
+        sourceType: "Receiving",
+        sourceItemId: item.id,
+        userId,
+      });
 
       await tx.insert(stockMovements).values({
         date: master.date,
         transTypeId: receivingTypeId,
         productId: item.productId,
         locationId: master.locationId,
-        qty: fmt(qty),
+        qty: fmtQty(qty),
         referenceTransId: master.id,
         referenceItemId: item.id,
         referenceDescription: receivingRef(master.id, item.id),
+        batchId: batch.id,
+        batchNo: batch.batchNo,
         remarks: item.remarks || master.remarks || null,
         createdBy: userId,
       });
@@ -79,7 +87,7 @@ export async function completeReceiving(receivingId: number, userId: number) {
         await tx
           .update(stockLevels)
           .set({
-            qty: fmt(toNum(level.qty) + qty),
+            qty: fmtQty(toNum(level.qty) + qty),
             updatedAt: new Date(),
             updatedBy: userId,
           })
@@ -88,7 +96,7 @@ export async function completeReceiving(receivingId: number, userId: number) {
         await tx.insert(stockLevels).values({
           productId: item.productId,
           locationId: master.locationId,
-          qty: fmt(qty),
+          qty: fmtQty(qty),
           updatedBy: userId,
         });
       }
@@ -108,16 +116,21 @@ export async function completeReceiving(receivingId: number, userId: number) {
         await tx
           .update(products)
           .set({
-            stock: fmt(newQty),
-            lastCost: fmt(unitCost),
-            avgCost: fmt(avg),
+            stock: fmtQty(newQty),
+            lastCost: fmtQty(unitCost),
+            avgCost: fmtQty(avg),
           })
           .where(eq(products.id, item.productId));
       }
 
       await tx
         .update(receivingItems)
-        .set({ status: "Completed", updatedAt: new Date(), updatedBy: userId })
+        .set({
+          status: "Completed",
+          batchNo,
+          updatedAt: new Date(),
+          updatedBy: userId,
+        })
         .where(eq(receivingItems.id, item.id));
     }
 
@@ -161,16 +174,41 @@ export async function cancelCompletedReceiving(
     for (const item of items) {
       const qty = toNum(item.qty);
       const unitCost = toNum(item.unitCost);
+      const batchNo = (item.batchNo || "").trim() || defaultBatchNo("BATCH", item.id);
+
+      await upsertInventoryBatch(tx, {
+        productId: item.productId,
+        locationId: master.locationId,
+        batchNo,
+        dateExpiry: item.dateExpiry,
+        qtyDelta: -qty,
+        sourceType: "Receiving Cancel",
+        sourceItemId: item.id,
+        userId,
+      });
+
+      const [batchRow] = await tx
+        .select()
+        .from(inventoryBatches)
+        .where(
+          and(
+            eq(inventoryBatches.productId, item.productId),
+            eq(inventoryBatches.locationId, master.locationId),
+            eq(inventoryBatches.batchNo, batchNo)
+          )
+        );
 
       await tx.insert(stockMovements).values({
         date: new Date(),
         transTypeId: cancelTypeId,
         productId: item.productId,
         locationId: master.locationId,
-        qty: fmt(-qty),
+        qty: fmtQty(-qty),
         referenceTransId: master.id,
         referenceItemId: item.id,
         referenceDescription: receivingRef(master.id, item.id),
+        batchId: batchRow?.id ?? null,
+        batchNo,
         remarks: deletedReason || "Receiving cancelled",
         createdBy: userId,
       });
@@ -189,7 +227,7 @@ export async function cancelCompletedReceiving(
         await tx
           .update(stockLevels)
           .set({
-            qty: fmt(toNum(level.qty) - qty),
+            qty: fmtQty(toNum(level.qty) - qty),
             updatedAt: new Date(),
             updatedBy: userId,
           })
@@ -213,8 +251,8 @@ export async function cancelCompletedReceiving(
         await tx
           .update(products)
           .set({
-            stock: fmt(newQty),
-            avgCost: fmt(Math.max(0, avg)),
+            stock: fmtQty(newQty),
+            avgCost: fmtQty(Math.max(0, avg)),
           })
           .where(eq(products.id, item.productId));
       }
@@ -243,3 +281,7 @@ export async function cancelCompletedReceiving(
       .where(eq(receivings.id, receivingId));
   });
 }
+
+// re-export for callers that used local helpers
+export { toNum, fmtQty };
+void consumeFefo;

@@ -1,16 +1,19 @@
 import { db } from "@/lib/db";
-import { transfers, transferItems, stockLevels, stockMovements } from "@/lib/db/schema";
+import {
+  transfers,
+  transferItems,
+  transferItemBatches,
+  stockLevels,
+  stockMovements,
+} from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getTransTypeIdByName, transferRef } from "@/lib/transfers";
-
-function toNum(v: string | number | null | undefined): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function fmt(n: number): string {
-  return n.toFixed(4);
-}
+import {
+  consumeFefo,
+  fmtQty,
+  toNum,
+  upsertInventoryBatch,
+} from "@/lib/fefo";
 
 async function upsertStockLevel(
   tx: {
@@ -34,7 +37,7 @@ async function upsertStockLevel(
     await tx
       .update(stockLevels)
       .set({
-        qty: fmt(toNum(level.qty) + delta),
+        qty: fmtQty(toNum(level.qty) + delta),
         updatedAt: new Date(),
         updatedBy: userId,
       })
@@ -43,7 +46,7 @@ async function upsertStockLevel(
     await tx.insert(stockLevels).values({
       productId,
       locationId,
-      qty: fmt(delta),
+      qty: fmtQty(delta),
       updatedBy: userId,
     });
   } else {
@@ -97,38 +100,70 @@ export async function completeTransfer(transferId: number, userId: number) {
       const available = fromLevel ? toNum(fromLevel.qty) : 0;
       if (available < qty) {
         throw new Error(
-          `Insufficient stock for item ${item.id}. Available: ${fmt(available)}`
+          `Insufficient stock for item ${item.id}. Available: ${fmtQty(available)}`
         );
       }
 
       const ref = transferRef(master.id, item.id);
       const remarks = item.remarks || master.remarks || null;
 
-      await tx.insert(stockMovements).values({
-        date: master.date,
-        transTypeId: transferTypeId,
+      const takes = await consumeFefo(tx, {
         productId: item.productId,
         locationId: master.fromLocationId,
-        qty: fmt(-qty),
-        referenceTransId: master.id,
-        referenceItemId: item.id,
-        referenceDescription: ref,
-        remarks,
-        createdBy: userId,
+        need: qty,
       });
 
-      await tx.insert(stockMovements).values({
-        date: master.date,
-        transTypeId: transferTypeId,
-        productId: item.productId,
-        locationId: master.toLocationId,
-        qty: fmt(qty),
-        referenceTransId: master.id,
-        referenceItemId: item.id,
-        referenceDescription: ref,
-        remarks,
-        createdBy: userId,
-      });
+      for (const take of takes) {
+        await tx.insert(transferItemBatches).values({
+          transferItemId: item.id,
+          transferId: master.id,
+          batchId: take.batchId,
+          batchNo: take.batchNo,
+          dateExpiry: take.dateExpiry,
+          qty: fmtQty(take.qty),
+        });
+
+        await tx.insert(stockMovements).values({
+          date: master.date,
+          transTypeId: transferTypeId,
+          productId: item.productId,
+          locationId: master.fromLocationId,
+          qty: fmtQty(-take.qty),
+          referenceTransId: master.id,
+          referenceItemId: item.id,
+          referenceDescription: ref,
+          batchId: take.batchId,
+          batchNo: take.batchNo,
+          remarks,
+          createdBy: userId,
+        });
+
+        const toBatch = await upsertInventoryBatch(tx, {
+          productId: item.productId,
+          locationId: master.toLocationId,
+          batchNo: take.batchNo,
+          dateExpiry: take.dateExpiry,
+          qtyDelta: take.qty,
+          sourceType: "Transfer",
+          sourceItemId: item.id,
+          userId,
+        });
+
+        await tx.insert(stockMovements).values({
+          date: master.date,
+          transTypeId: transferTypeId,
+          productId: item.productId,
+          locationId: master.toLocationId,
+          qty: fmtQty(take.qty),
+          referenceTransId: master.id,
+          referenceItemId: item.id,
+          referenceDescription: ref,
+          batchId: toBatch.id,
+          batchNo: toBatch.batchNo,
+          remarks,
+          createdBy: userId,
+        });
+      }
 
       await upsertStockLevel(tx, item.productId, master.fromLocationId, -qty, userId);
       await upsertStockLevel(tx, item.productId, master.toLocationId, qty, userId);
@@ -175,32 +210,96 @@ export async function cancelCompletedTransfer(
     for (const item of items) {
       const qty = toNum(item.qty);
       const ref = transferRef(master.id, item.id);
+      const remarks = deletedReason || "Transfer cancelled";
 
-      await tx.insert(stockMovements).values({
-        date: new Date(),
-        transTypeId: cancelTypeId,
-        productId: item.productId,
-        locationId: master.fromLocationId,
-        qty: fmt(qty),
-        referenceTransId: master.id,
-        referenceItemId: item.id,
-        referenceDescription: ref,
-        remarks: deletedReason || "Transfer cancelled",
-        createdBy: userId,
-      });
+      const allocs = await tx
+        .select()
+        .from(transferItemBatches)
+        .where(eq(transferItemBatches.transferItemId, item.id));
 
-      await tx.insert(stockMovements).values({
-        date: new Date(),
-        transTypeId: cancelTypeId,
-        productId: item.productId,
-        locationId: master.toLocationId,
-        qty: fmt(-qty),
-        referenceTransId: master.id,
-        referenceItemId: item.id,
-        referenceDescription: ref,
-        remarks: deletedReason || "Transfer cancelled",
-        createdBy: userId,
-      });
+      if (allocs.length > 0) {
+        for (const alloc of allocs) {
+          const takeQty = toNum(alloc.qty);
+
+          const fromBatch = await upsertInventoryBatch(tx, {
+            productId: item.productId,
+            locationId: master.fromLocationId,
+            batchNo: alloc.batchNo,
+            dateExpiry: alloc.dateExpiry,
+            qtyDelta: takeQty,
+            sourceType: "Transfer Cancel",
+            sourceItemId: item.id,
+            userId,
+          });
+
+          await tx.insert(stockMovements).values({
+            date: new Date(),
+            transTypeId: cancelTypeId,
+            productId: item.productId,
+            locationId: master.fromLocationId,
+            qty: fmtQty(takeQty),
+            referenceTransId: master.id,
+            referenceItemId: item.id,
+            referenceDescription: ref,
+            batchId: fromBatch.id,
+            batchNo: fromBatch.batchNo,
+            remarks,
+            createdBy: userId,
+          });
+
+          const toBatch = await upsertInventoryBatch(tx, {
+            productId: item.productId,
+            locationId: master.toLocationId,
+            batchNo: alloc.batchNo,
+            dateExpiry: alloc.dateExpiry,
+            qtyDelta: -takeQty,
+            sourceType: "Transfer Cancel",
+            sourceItemId: item.id,
+            userId,
+          });
+
+          await tx.insert(stockMovements).values({
+            date: new Date(),
+            transTypeId: cancelTypeId,
+            productId: item.productId,
+            locationId: master.toLocationId,
+            qty: fmtQty(-takeQty),
+            referenceTransId: master.id,
+            referenceItemId: item.id,
+            referenceDescription: ref,
+            batchId: toBatch.id,
+            batchNo: toBatch.batchNo,
+            remarks,
+            createdBy: userId,
+          });
+        }
+      } else {
+        await tx.insert(stockMovements).values({
+          date: new Date(),
+          transTypeId: cancelTypeId,
+          productId: item.productId,
+          locationId: master.fromLocationId,
+          qty: fmtQty(qty),
+          referenceTransId: master.id,
+          referenceItemId: item.id,
+          referenceDescription: ref,
+          remarks,
+          createdBy: userId,
+        });
+
+        await tx.insert(stockMovements).values({
+          date: new Date(),
+          transTypeId: cancelTypeId,
+          productId: item.productId,
+          locationId: master.toLocationId,
+          qty: fmtQty(-qty),
+          referenceTransId: master.id,
+          referenceItemId: item.id,
+          referenceDescription: ref,
+          remarks,
+          createdBy: userId,
+        });
+      }
 
       await upsertStockLevel(tx, item.productId, master.fromLocationId, qty, userId);
       await upsertStockLevel(tx, item.productId, master.toLocationId, -qty, userId);

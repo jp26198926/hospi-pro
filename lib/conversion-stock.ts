@@ -3,15 +3,13 @@ import { conversions, products, stockLevels, stockMovements } from "@/lib/db/sch
 import { eq, and } from "drizzle-orm";
 import { getTransTypeIdByName } from "@/lib/receivings";
 import { formatConversionNo } from "@/lib/validations/conversion";
-
-function toNum(v: string | number | null | undefined): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function fmt(n: number): string {
-  return n.toFixed(4);
-}
+import {
+  consumeFefo,
+  defaultBatchNo,
+  fmtQty,
+  toNum,
+  upsertInventoryBatch,
+} from "@/lib/fefo";
 
 export async function getStockAtLocation(productId: number, locationId: number) {
   const [level] = await db
@@ -43,13 +41,13 @@ async function upsertStockLevel(
   if (level) {
     await tx
       .update(stockLevels)
-      .set({ qty: fmt(qty), updatedAt: new Date(), updatedBy: userId })
+      .set({ qty: fmtQty(qty), updatedAt: new Date(), updatedBy: userId })
       .where(eq(stockLevels.id, level.id));
   } else if (qty > 0) {
     await tx.insert(stockLevels).values({
       productId,
       locationId,
-      qty: fmt(qty),
+      qty: fmtQty(qty),
       updatedBy: userId,
     });
   } else {
@@ -103,7 +101,7 @@ export async function createConversion(
     const available = level ? toNum(level.qty) : 0;
     if (available < input.fromQty) {
       throw new Error(
-        `Insufficient stock for from-product. Available: ${fmt(available)}`
+        `Insufficient stock for from-product. Available: ${fmtQty(available)}`
       );
     }
 
@@ -114,10 +112,10 @@ export async function createConversion(
         locationId: input.locationId,
         fromProductId: input.fromProductId,
         fromUomId: fromProduct.uomId,
-        fromQty: fmt(input.fromQty),
+        fromQty: fmtQty(input.fromQty),
         toProductId: input.toProductId,
         toUomId: toProduct.uomId,
-        newQty: fmt(input.newQty),
+        newQty: fmtQty(input.newQty),
         remarks: input.remarks,
         status: "Completed",
         createdBy: userId,
@@ -126,17 +124,46 @@ export async function createConversion(
 
     const ref = formatConversionNo(row.id);
 
-    await tx.insert(stockMovements).values({
-      date: input.date,
-      transTypeId,
+    const takes = await consumeFefo(tx, {
       productId: input.fromProductId,
       locationId: input.locationId,
-      qty: fmt(-input.fromQty),
-      referenceTransId: row.id,
-      referenceItemId: null,
-      referenceDescription: ref,
-      remarks: input.remarks,
-      createdBy: userId,
+      need: input.fromQty,
+    });
+
+    let earliestExpiry: Date | null = null;
+    for (const take of takes) {
+      if (take.dateExpiry) {
+        if (!earliestExpiry || take.dateExpiry < earliestExpiry) {
+          earliestExpiry = take.dateExpiry;
+        }
+      }
+
+      await tx.insert(stockMovements).values({
+        date: input.date,
+        transTypeId,
+        productId: input.fromProductId,
+        locationId: input.locationId,
+        qty: fmtQty(-take.qty),
+        referenceTransId: row.id,
+        referenceItemId: null,
+        referenceDescription: ref,
+        batchId: take.batchId,
+        batchNo: take.batchNo,
+        remarks: input.remarks,
+        createdBy: userId,
+      });
+    }
+
+    const toBatchNo = defaultBatchNo("CNV", row.id);
+    const toBatch = await upsertInventoryBatch(tx, {
+      productId: input.toProductId,
+      locationId: input.locationId,
+      batchNo: toBatchNo,
+      dateExpiry: earliestExpiry,
+      qtyDelta: input.newQty,
+      sourceType: "Conversion",
+      sourceItemId: row.id,
+      userId,
     });
 
     await tx.insert(stockMovements).values({
@@ -144,10 +171,12 @@ export async function createConversion(
       transTypeId,
       productId: input.toProductId,
       locationId: input.locationId,
-      qty: fmt(input.newQty),
+      qty: fmtQty(input.newQty),
       referenceTransId: row.id,
       referenceItemId: null,
       referenceDescription: ref,
+      batchId: toBatch.id,
+      batchNo: toBatch.batchNo,
       remarks: input.remarks,
       createdBy: userId,
     });
@@ -169,11 +198,11 @@ export async function createConversion(
 
     await tx
       .update(products)
-      .set({ stock: fmt(toNum(fromProduct.stock) - input.fromQty) })
+      .set({ stock: fmtQty(toNum(fromProduct.stock) - input.fromQty) })
       .where(eq(products.id, input.fromProductId));
     await tx
       .update(products)
-      .set({ stock: fmt(toNum(toProduct.stock) + input.newQty) })
+      .set({ stock: fmtQty(toNum(toProduct.stock) + input.newQty) })
       .where(eq(products.id, input.toProductId));
 
     return { ...row, transNo: ref };
@@ -186,6 +215,7 @@ export async function cancelConversion(
   deletedReason: string | null
 ) {
   const cancelTypeId = await getTransTypeIdByName("Conversion Cancel");
+  const convTypeId = await getTransTypeIdByName("Conversion");
   return db.transaction(async (tx) => {
     const [row] = await tx
       .select()
@@ -197,32 +227,79 @@ export async function cancelConversion(
     const fromQty = toNum(row.fromQty);
     const newQty = toNum(row.newQty);
     const ref = formatConversionNo(row.id);
+    const remarks = deletedReason || "Conversion cancelled";
 
-    await tx.insert(stockMovements).values({
-      date: new Date(),
-      transTypeId: cancelTypeId,
-      productId: row.fromProductId,
-      locationId: row.locationId,
-      qty: fmt(fromQty),
-      referenceTransId: row.id,
-      referenceItemId: null,
-      referenceDescription: ref,
-      remarks: deletedReason || "Conversion cancelled",
-      createdBy: userId,
-    });
+    const origMovements = await tx
+      .select()
+      .from(stockMovements)
+      .where(
+        and(
+          eq(stockMovements.referenceTransId, row.id),
+          eq(stockMovements.transTypeId, convTypeId)
+        )
+      );
 
-    await tx.insert(stockMovements).values({
-      date: new Date(),
-      transTypeId: cancelTypeId,
-      productId: row.toProductId,
-      locationId: row.locationId,
-      qty: fmt(-newQty),
-      referenceTransId: row.id,
-      referenceItemId: null,
-      referenceDescription: ref,
-      remarks: deletedReason || "Conversion cancelled",
-      createdBy: userId,
-    });
+    if (origMovements.length > 0) {
+      for (const m of origMovements) {
+        const mQty = toNum(m.qty);
+        if (mQty === 0) continue;
+        const mReverse = -mQty;
+
+        if (m.batchNo) {
+          await upsertInventoryBatch(tx, {
+            productId: m.productId,
+            locationId: row.locationId,
+            batchNo: m.batchNo,
+            dateExpiry: null,
+            qtyDelta: mReverse,
+            sourceType: "Conversion Cancel",
+            sourceItemId: row.id,
+            userId,
+          });
+        }
+
+        await tx.insert(stockMovements).values({
+          date: new Date(),
+          transTypeId: cancelTypeId,
+          productId: m.productId,
+          locationId: row.locationId,
+          qty: fmtQty(mReverse),
+          referenceTransId: row.id,
+          referenceItemId: null,
+          referenceDescription: ref,
+          batchId: m.batchId,
+          batchNo: m.batchNo,
+          remarks,
+          createdBy: userId,
+        });
+      }
+    } else {
+      await tx.insert(stockMovements).values({
+        date: new Date(),
+        transTypeId: cancelTypeId,
+        productId: row.fromProductId,
+        locationId: row.locationId,
+        qty: fmtQty(fromQty),
+        referenceTransId: row.id,
+        referenceItemId: null,
+        referenceDescription: ref,
+        remarks,
+        createdBy: userId,
+      });
+
+      await tx.insert(stockMovements).values({
+        date: new Date(),
+        transTypeId: cancelTypeId,
+        productId: row.toProductId,
+        locationId: row.locationId,
+        qty: fmtQty(-newQty),
+        referenceTransId: row.id,
+        referenceItemId: null,
+        referenceDescription: ref,
+        remarks,
+        createdBy: userId,
+      });
+    }
 
     const [fromLevel] = await tx
       .select()
@@ -270,13 +347,13 @@ export async function cancelConversion(
     if (fromProduct) {
       await tx
         .update(products)
-        .set({ stock: fmt(toNum(fromProduct.stock) + fromQty) })
+        .set({ stock: fmtQty(toNum(fromProduct.stock) + fromQty) })
         .where(eq(products.id, row.fromProductId));
     }
     if (toProduct) {
       await tx
         .update(products)
-        .set({ stock: fmt(toNum(toProduct.stock) - newQty) })
+        .set({ stock: fmtQty(toNum(toProduct.stock) - newQty) })
         .where(eq(products.id, row.toProductId));
     }
 

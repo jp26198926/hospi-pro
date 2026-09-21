@@ -14,6 +14,8 @@ export interface ReleasingItem {
   productName: string;
   uomName?: string | null;
   qty: string;
+  batchId?: number | null;
+  batchNo?: string | null;
   dateExpiry: Date | string | null;
   remarks: string | null;
   status: ReleasingStatus;

@@ -1,6 +1,12 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { releasingItems, releasings, products, uoms } from "@/lib/db/schema";
+import {
+  releasingItems,
+  releasings,
+  products,
+  uoms,
+  inventoryBatches,
+} from "@/lib/db/schema";
 import { releasingItemSchema, formatReleasingItemNo } from "@/lib/validations/releasing-item";
 import { getDraftItemsQty, getStockAtLocation } from "@/lib/releasing-stock";
 import { eq, desc, asc, ilike, and, ne, count as drizzleCount } from "drizzle-orm";
@@ -56,6 +62,8 @@ export async function GET(request: NextRequest) {
           productName: products.name,
           uomName: uoms.name,
           qty: releasingItems.qty,
+          batchId: releasingItems.batchId,
+          batchNo: inventoryBatches.batchNo,
           dateExpiry: releasingItems.dateExpiry,
           remarks: releasingItems.remarks,
           status: releasingItems.status,
@@ -63,6 +71,7 @@ export async function GET(request: NextRequest) {
         .from(releasingItems)
         .innerJoin(products, eq(releasingItems.productId, products.id))
         .innerJoin(uoms, eq(products.uomId, uoms.id))
+        .leftJoin(inventoryBatches, eq(releasingItems.batchId, inventoryBatches.id))
         .where(where)
         .orderBy(orderFn(sortColumn))
         .limit(limit)
@@ -139,6 +148,7 @@ export async function POST(request: NextRequest) {
         releasingId,
         productId: parsed.data.productId,
         qty: parsed.data.qty.toFixed(4),
+        batchId: parsed.data.batchId ?? null,
         dateExpiry: parsed.data.dateExpiry || null,
         remarks: parsed.data.remarks || null,
         status: "Draft",

@@ -32,7 +32,9 @@ export async function GET(
       return Response.json({ error: "Receiving item not found" }, { status: 404 });
     }
 
-    return Response.json({ data: { ...data, batchNo: formatBatchNo(data.id) } });
+    return Response.json({
+      data: { ...data, batchNo: data.batchNo || formatBatchNo(data.id) },
+    });
   } catch (error) {
     console.error("GET /api/receiving-items/[id] error:", error);
     return Response.json({ error: "Failed to fetch receiving item" }, { status: 500 });
@@ -85,6 +87,7 @@ export async function PUT(
         qty: parsed.data.qty.toFixed(4),
         unitCost: parsed.data.unitCost.toFixed(4),
         totalCost: totalCost.toFixed(4),
+        batchNo: parsed.data.batchNo?.trim() || null,
         dateExpiry: parsed.data.dateExpiry || null,
         remarks: parsed.data.remarks || null,
         updatedAt: new Date(),
@@ -93,7 +96,9 @@ export async function PUT(
       .where(eq(receivingItems.id, itemId))
       .returning();
 
-    return Response.json({ data: { ...data, batchNo: formatBatchNo(data.id) } });
+    return Response.json({
+      data: { ...data, batchNo: data.batchNo || formatBatchNo(data.id) },
+    });
   } catch (error) {
     console.error("PUT /api/receiving-items/[id] error:", error);
     return Response.json({ error: "Failed to update receiving item" }, { status: 500 });
@@ -204,7 +209,9 @@ export async function PATCH(
       .where(eq(receivingItems.id, itemId))
       .returning();
 
-    return Response.json({ data: { ...data, batchNo: formatBatchNo(data.id) } });
+    return Response.json({
+      data: { ...data, batchNo: data.batchNo || formatBatchNo(data.id) },
+    });
   } catch (error) {
     console.error("PATCH /api/receiving-items/[id] error:", error);
     return Response.json({ error: "Failed to restore receiving item" }, { status: 500 });

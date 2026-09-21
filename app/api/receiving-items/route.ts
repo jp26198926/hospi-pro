@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
           qty: receivingItems.qty,
           unitCost: receivingItems.unitCost,
           totalCost: receivingItems.totalCost,
+          batchNo: receivingItems.batchNo,
           dateExpiry: receivingItems.dateExpiry,
           remarks: receivingItems.remarks,
           status: receivingItems.status,
@@ -92,7 +93,10 @@ export async function GET(request: NextRequest) {
     const total = countResult[0]?.value ?? 0;
 
     return Response.json({
-      data: data.map((row) => ({ ...row, batchNo: formatBatchNo(row.id) })),
+      data: data.map((row) => ({
+        ...row,
+        batchNo: row.batchNo || formatBatchNo(row.id),
+      })),
       total,
       page,
       limit,
@@ -144,6 +148,7 @@ export async function POST(request: NextRequest) {
         qty: parsed.data.qty.toFixed(4),
         unitCost: parsed.data.unitCost.toFixed(4),
         totalCost: totalCost.toFixed(4),
+        batchNo: parsed.data.batchNo?.trim() || null,
         dateExpiry: parsed.data.dateExpiry || null,
         remarks: parsed.data.remarks || null,
         status: "Draft",
@@ -152,7 +157,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return Response.json(
-      { data: { ...data, batchNo: formatBatchNo(data.id) } },
+      { data: { ...data, batchNo: data.batchNo || formatBatchNo(data.id) } },
       { status: 201 }
     );
   } catch (error) {

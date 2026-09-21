@@ -125,6 +125,8 @@ export const stockMovements = pgTable("stock_movements", {
   referenceTransId: bigint("reference_trans_id", { mode: "number" }),
   referenceItemId: bigint("reference_item_id", { mode: "number" }),
   referenceDescription: text("reference_description"),
+  batchId: bigint("batch_id", { mode: "number" }),
+  batchNo: text("batch_no"),
   remarks: text("remarks"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
   createdBy: bigint("created_by", { mode: "number" }).references(
@@ -165,6 +167,7 @@ export const receivingItems = pgTable("receiving_items", {
   qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
   unitCost: decimal("unit_cost", { precision: 10, scale: 4 }).notNull().default("0"),
   totalCost: decimal("total_cost", { precision: 10, scale: 4 }).notNull().default("0"),
+  batchNo: text("batch_no"),
   dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
   remarks: text("remarks"),
   status: inventoryStatusEnum("status").notNull().default("Draft"),
@@ -207,6 +210,7 @@ export const releasingItems = pgTable("releasing_items", {
     .notNull()
     .references(() => products.id),
   qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
+  batchId: bigint("batch_id", { mode: "number" }),
   dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
   remarks: text("remarks"),
   status: inventoryStatusEnum("status").notNull().default("Draft"),
@@ -494,5 +498,70 @@ export const refreshTokens = pgTable("refresh_tokens", {
   userId: bigint("user_id", { mode: "number" }).notNull().references(() => users.id),
   token: text("token").notNull().unique(),
   expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+});
+
+export const inventoryBatches = pgTable(
+  "inventory_batches",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    productId: bigint("product_id", { mode: "number" })
+      .notNull()
+      .references(() => products.id),
+    locationId: bigint("location_id", { mode: "number" })
+      .notNull()
+      .references(() => locations.id),
+    batchNo: text("batch_no").notNull(),
+    dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
+    qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
+    unitCost: decimal("unit_cost", { precision: 10, scale: 4 }).notNull().default("0"),
+    sourceType: text("source_type"),
+    sourceItemId: bigint("source_item_id", { mode: "number" }),
+    status: commonStatusEnum("status").notNull().default("Active"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }),
+    createdBy: bigint("created_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+    updatedBy: bigint("updated_by", { mode: "number" }).references((): AnyPgColumn => users.id),
+  },
+  (t) => [
+    uniqueIndex("inventory_batches_product_location_batch_idx").on(
+      t.productId,
+      t.locationId,
+      t.batchNo
+    ),
+  ]
+);
+
+export const releasingItemBatches = pgTable("releasing_item_batches", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  releasingItemId: bigint("releasing_item_id", { mode: "number" })
+    .notNull()
+    .references(() => releasingItems.id),
+  releasingId: bigint("releasing_id", { mode: "number" })
+    .notNull()
+    .references(() => releasings.id),
+  batchId: bigint("batch_id", { mode: "number" })
+    .notNull()
+    .references(() => inventoryBatches.id),
+  batchNo: text("batch_no").notNull(),
+  dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
+  qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
+});
+
+export const transferItemBatches = pgTable("transfer_item_batches", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  transferItemId: bigint("transfer_item_id", { mode: "number" })
+    .notNull()
+    .references(() => transferItems.id),
+  transferId: bigint("transfer_id", { mode: "number" })
+    .notNull()
+    .references(() => transfers.id),
+  batchId: bigint("batch_id", { mode: "number" })
+    .notNull()
+    .references(() => inventoryBatches.id),
+  batchNo: text("batch_no").notNull(),
+  dateExpiry: timestamp("date_expiry", { withTimezone: true, mode: "date" }),
+  qty: decimal("qty", { precision: 10, scale: 4 }).notNull().default("0"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
 });

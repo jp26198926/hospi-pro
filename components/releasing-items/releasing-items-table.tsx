@@ -27,6 +27,7 @@ import type { ReleasingStatus } from "@/components/releasings/releasings-columns
 interface ReleasingItemsTableProps {
   releasingId: number;
   masterStatus: ReleasingStatus;
+  locationId: number | null;
   timezone: string;
   onMutated?: () => void;
   reloadKey?: number;
@@ -35,6 +36,7 @@ interface ReleasingItemsTableProps {
 export function ReleasingItemsTable({
   releasingId,
   masterStatus,
+  locationId,
   timezone,
   onMutated,
   reloadKey = 0,
@@ -188,6 +190,7 @@ export function ReleasingItemsTable({
         onOpenChange={setFormOpen}
         mode={formMode}
         releasingId={releasingId}
+        locationId={locationId}
         item={editItem}
         onSuccess={() => {
           fetchData();

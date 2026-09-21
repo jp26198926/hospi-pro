@@ -22,11 +22,35 @@ interface SelectOption {
   label: string;
 }
 
+interface BatchOption {
+  id: number;
+  batchNo: string;
+  dateExpiry: Date | string | null;
+  qty: string | number;
+}
+
+interface FefoAllocation {
+  batchId: number;
+  batchNo: string;
+  dateExpiry: Date | string | null;
+  qty: string;
+}
+
+interface FefoPreview {
+  allocations: FefoAllocation[];
+  shortage: string;
+  allocatedQty: string;
+  requestedQty: string;
+}
+
+const AUTO_FEFO = "all";
+
 interface ReleasingItemFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: "add" | "edit";
   releasingId: number;
+  locationId: number | null;
   item: ReleasingItem | null;
   onSuccess: () => void;
 }
@@ -36,15 +60,19 @@ export function ReleasingItemFormModal({
   onOpenChange,
   mode,
   releasingId,
+  locationId,
   item,
   onSuccess,
 }: ReleasingItemFormModalProps) {
   const [productId, setProductId] = useState("");
   const [qty, setQty] = useState("0");
+  const [batchId, setBatchId] = useState(AUTO_FEFO);
   const [dateExpiry, setDateExpiry] = useState("");
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
   const [productOptions, setProductOptions] = useState<SelectOption[]>([]);
+  const [batchOptions, setBatchOptions] = useState<SelectOption[]>([]);
+  const [fefoPreview, setFefoPreview] = useState<FefoPreview | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
 
   if (open !== prevOpen) {
@@ -53,6 +81,7 @@ export function ReleasingItemFormModal({
       if (mode === "edit" && item) {
         setProductId(String(item.productId));
         setQty(String(Number(item.qty)));
+        setBatchId(item.batchId != null ? String(item.batchId) : AUTO_FEFO);
         setDateExpiry(
           item.dateExpiry ? formatDateOnly(item.dateExpiry, "UTC") : ""
         );
@@ -60,9 +89,12 @@ export function ReleasingItemFormModal({
       } else {
         setProductId("");
         setQty("0");
+        setBatchId(AUTO_FEFO);
         setDateExpiry("");
         setRemarks("");
       }
+      setFefoPreview(null);
+      setBatchOptions([]);
     }
   }
 
@@ -92,6 +124,90 @@ export function ReleasingItemFormModal({
     };
   }, [open]);
 
+  // Load batch options for selected product + from-location
+  useEffect(() => {
+    if (!open || !productId || !locationId) {
+      setBatchOptions([]);
+      return;
+    }
+    let cancelled = false;
+    async function loadBatches() {
+      try {
+        const res = await fetch(
+          `/api/inventory-batches?productId=${productId}&locationId=${locationId}`
+        );
+        const json = await res.json();
+        if (!res.ok || cancelled) return;
+        const rows: BatchOption[] = json.data || [];
+        const options: SelectOption[] = rows.map((b) => {
+          const expiry = b.dateExpiry
+            ? formatDateOnly(b.dateExpiry, "UTC")
+            : "no expiry";
+          return {
+            value: String(b.id),
+            label: `${b.batchNo} · ${expiry} · ${Number(b.qty).toFixed(4)}`,
+          };
+        });
+        // Keep currently selected batch visible even if qty is now 0
+        if (
+          item?.batchId != null &&
+          batchId === String(item.batchId) &&
+          !options.some((o) => o.value === String(item.batchId)) &&
+          item.batchNo
+        ) {
+          options.unshift({
+            value: String(item.batchId),
+            label: `${item.batchNo} (current)`,
+          });
+        }
+        setBatchOptions(options);
+      } catch {
+        // ignore
+      }
+    }
+    loadBatches();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, productId, locationId, item?.batchId, item?.batchNo, batchId]);
+
+  // FEFO preview when productId + qty set
+  useEffect(() => {
+    if (!open || !productId || !locationId) {
+      setFefoPreview(null);
+      return;
+    }
+    const qtyNum = Number(qty);
+    if (!Number.isFinite(qtyNum) || qtyNum <= 0) {
+      setFefoPreview(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/releasings/preview-fefo?productId=${productId}&locationId=${locationId}&qty=${qtyNum}`
+        );
+        const json = await res.json();
+        if (!res.ok || cancelled) return;
+        setFefoPreview({
+          allocations: json.allocations || [],
+          shortage: json.shortage || "0.0000",
+          allocatedQty: json.allocatedQty || "0.0000",
+          requestedQty: json.requestedQty || qtyNum.toFixed(4),
+        });
+      } catch {
+        if (!cancelled) setFefoPreview(null);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [open, productId, locationId, qty]);
+
+  const isAutoFefo = !batchId || batchId === AUTO_FEFO;
+
   const onSubmit = async () => {
     if (!productId) {
       toast.error("Product is required");
@@ -111,6 +227,7 @@ export function ReleasingItemFormModal({
           releasingId,
           productId: Number(productId),
           qty: Number(qty) || 0,
+          batchId: isAutoFefo ? null : Number(batchId),
           dateExpiry: dateExpiry || null,
           remarks: remarks.trim() || null,
         }),
@@ -169,6 +286,58 @@ export function ReleasingItemFormModal({
               className="border-[#ccc] focus:border-[#337ab7] focus:ring-[#337ab7]"
             />
           </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-[#333]">Batch</Label>
+            <SearchableSelect
+              options={batchOptions}
+              value={isAutoFefo ? AUTO_FEFO : batchId}
+              onValueChange={setBatchId}
+              placeholder="Auto (FEFO)"
+              allOption
+              allLabel="Auto (FEFO)"
+            />
+            {!locationId && (
+              <p className="text-xs text-muted-foreground">
+                From-location required to load batches.
+              </p>
+            )}
+          </div>
+          {fefoPreview && (
+            <div className="space-y-1 rounded-sm border border-[#eee] bg-[#fafafa] p-2 text-xs text-muted-foreground">
+              {Number(fefoPreview.shortage) > 0 ? (
+                <p className="text-[#d9534f]">
+                  Insufficient FEFO stock. Shortage: {fefoPreview.shortage}
+                </p>
+              ) : fefoPreview.allocations.length === 0 ? (
+                <p>No batch stock at this location for the selected product.</p>
+              ) : (
+                <>
+                  <p>
+                    {isAutoFefo
+                      ? "FEFO allocation:"
+                      : "Stock at location (FEFO order):"}
+                  </p>
+                  <ul className="list-disc space-y-0.5 pl-4">
+                    {fefoPreview.allocations.map((a) => (
+                      <li key={a.batchId}>
+                        {a.batchNo}
+                        {a.dateExpiry
+                          ? ` · exp ${formatDateOnly(a.dateExpiry, "UTC")}`
+                          : ""}
+                        {" · "}
+                        {a.qty}
+                      </li>
+                    ))}
+                  </ul>
+                  {!isAutoFefo && (
+                    <p>
+                      Selected batch will be used (not auto FEFO allocation).
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-[#333]">Expiry</Label>
             <DatePicker

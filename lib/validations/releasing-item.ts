@@ -3,6 +3,7 @@ import { z } from "zod";
 export const releasingItemSchema = z.object({
   productId: z.number().int().positive("Product is required"),
   qty: z.coerce.number().min(0.0001, "Qty must be greater than 0"),
+  batchId: z.number().int().positive().optional().nullable(),
   dateExpiry: z.coerce.date().optional().nullable(),
   remarks: z.string().max(1000).optional().nullable(),
 });
