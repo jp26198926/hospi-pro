@@ -410,5 +410,6 @@ If any endpoint must be accessible without auth, add its path to `PUBLIC_API_ROU
 - **Unique user-editable codes**: validate max length; POST/PUT uniqueness excluding Deleted (PUT also excludes self). Helper prefill endpoints stay authenticated under the parent page path — not in `PUBLIC_API_ROUTES`.
 - **Toast**: `import { toast } from "sonner"` — not from `components/ui/sonner`.
 - **Mobile**: table `hidden md:block`, cards `md:hidden`. All modals must trigger from both layouts.
+- **Report-only modules**: no schema/migration/validations/CRUD modals. Pattern: **`report-inventory`** — page `requirePageRead`, API GET + `requirePermission`, filter card + results bar + DataTable + PDF/Excel. Register `pages` row + `role_permissions` (View+Read) via seed SQL/node, not drizzle migrate.
 - **Exports**: include the status column in both PDF and Excel.
 - **Created At column**: if more than 5 data columns (exclude `#` and Actions), omit Created At from the DataTable. Products is the wide-table reference. Existing narrow modules (roles, departments) keep Created At.

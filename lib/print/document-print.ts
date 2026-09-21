@@ -78,6 +78,81 @@ export function statusFill(status: PrintStatus): [number, number, number] {
   return [240, 173, 78];
 }
 
+/** Company letterhead for PDFs: logo, app name, address, phone. Returns Y after the header rule. */
+export async function drawCompanyHeader(
+  doc: jsPDF,
+  appSettings: PrintAppSettings | undefined,
+  opts?: {
+    rightTitle?: string;
+    rightTop?: string;
+    margin?: number;
+    pageWidth?: number;
+    fallbackAppName?: string;
+  }
+): Promise<number> {
+  const margin = opts?.margin ?? 15;
+  const pageW = opts?.pageWidth ?? doc.internal.pageSize.getWidth();
+  const logoDataUrl = await loadLogoDataUrl(appSettings?.appLogo ?? null);
+  const appName = appSettings?.appName || opts?.fallbackAppName || "";
+  const address = appSettings?.address || null;
+  const phone = appSettings?.phone || null;
+
+  const y = 10;
+  let textX = margin;
+  if (logoDataUrl) {
+    try {
+      doc.addImage(logoDataUrl, "PNG", margin, y, 14, 14);
+      textX = margin + 17;
+    } catch {
+      textX = margin;
+    }
+  }
+
+  let infoY = y + 10;
+  if (appName) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...BLUE);
+    doc.text(appName, textX, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY);
+    infoY = y + 10;
+  } else {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY);
+    infoY = y + 5;
+  }
+
+  if (address) {
+    doc.text(address, textX, infoY);
+    infoY += 4.5;
+  }
+  if (phone) {
+    doc.text(`Tel: ${phone}`, textX, infoY);
+  }
+
+  if (opts?.rightTop) {
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY);
+    doc.setFont("helvetica", "normal");
+    doc.text(opts.rightTop, pageW - margin, y + 2, { align: "right" });
+  }
+  if (opts?.rightTitle) {
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BLUE);
+    doc.text(opts.rightTitle, pageW - margin, y + 10, { align: "right" });
+  }
+
+  const ruleY = Math.max(y + 20, infoY + 4);
+  doc.setDrawColor(...BLUE);
+  doc.setLineWidth(0.3);
+  doc.line(margin, ruleY, pageW - margin, ruleY);
+  return ruleY + 4;
+}
+
 /** Shared branded document print layout for receivings, releasings, and future modules. */
 export async function printDocumentPdf(input: PrintDocumentInput): Promise<void> {
   const {
@@ -100,58 +175,19 @@ export async function printDocumentPdf(input: PrintDocumentInput): Promise<void>
     fileName,
   } = input;
 
-  const logoDataUrl = await loadLogoDataUrl(appSettings?.appLogo ?? null);
-  const appName = appSettings?.appName || "RBAC System";
-  const address = appSettings?.address || null;
-  const phone = appSettings?.phone || null;
-
   const doc = new jsPDF();
   const pageW = 210;
   const pageH = 297;
   const margin = 15;
   const contentW = pageW - margin * 2;
-  let y = 10;
 
-  let textX = margin;
-  if (logoDataUrl) {
-    try {
-      doc.addImage(logoDataUrl, "PNG", margin, y, 14, 14);
-      textX = margin + 17;
-    } catch {
-      textX = margin;
-    }
-  }
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(...BLUE);
-  doc.text(appName, textX, y + 5);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...GRAY);
-  let infoY = y + 10;
-  if (address) {
-    doc.text(address, textX, infoY);
-    infoY += 4.5;
-  }
-  if (phone) {
-    doc.text(phone, textX, infoY);
-  }
-
-  doc.setFontSize(9);
-  doc.setTextColor(...GRAY);
-  doc.setFont("helvetica", "normal");
-  doc.text(documentNoLabel, pageW - margin, y + 2, { align: "right" });
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...BLUE);
-  doc.text(documentNo, pageW - margin, y + 10, { align: "right" });
-
-  y = Math.max(y + 20, infoY + 4);
-  doc.setDrawColor(...BLUE);
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, pageW - margin, y);
-  y += 4;
+  let y = await drawCompanyHeader(doc, appSettings, {
+    margin,
+    pageWidth: pageW,
+    rightTop: documentNoLabel,
+    rightTitle: documentNo,
+    fallbackAppName: "RBAC System",
+  });
 
   doc.setFillColor(238, 242, 247);
   doc.roundedRect(margin, y, contentW, 10, 1, 1, "F");
