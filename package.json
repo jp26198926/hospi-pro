@@ -13,6 +13,7 @@
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "db:seed-timezones": "dotenv -e .env.local -- tsx scripts/seed-timezones.ts",
     "db:seed-currencies": "dotenv -e .env.local -- tsx scripts/seed-currencies.ts",
+    "db:seed-phar-conversions-page": "dotenv -e .env.local -- tsx scripts/seed-phar-conversions-page.ts",
     "db:truncate-inventory": "dotenv -e .env.local -- tsx scripts/truncate-inventory.ts"
   },
   "dependencies": {

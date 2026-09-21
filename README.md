@@ -27,6 +27,8 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Transfers — list `/transfers` (**Trans #** `TRAN-#####` **clickable**; Draft default). **Detail `/transfers/[id]`**: both from/to locations **required**; items + scan auto-add (Series `TI-######`); Complete moves stock **from→to** on `stock_levels` only (**no** `products.stock` update); print via `printDocumentPdf` (TRANSFER).
 - Adjustments — `/adjustments` single-line stock adj **`ADJ-#####`**; **UOM** from product (`uom_id` FK); `qty_new = qty_old + qty_adj`; Add modal shows **UOM + Old/New qty** after product pick; save posts **Completed** immediately; **View modal** (2-col layout; Product/Remarks full width) + Print; Cancel reverses stock sign; list defaults Completed.
 - Conversions — `/conversions` product-to-product at one location **`CNV-#####`**; from/to UOM auto from products; save posts **Completed** (−qty from product, +qty to product on `stock_levels` + `products.stock` + `stock_movements` **Conversion**); from ≠ to product; View modal 2-col + Print; Cancel reverses; list defaults Completed.
+- Phar Conversions — `/phar-conversions` clone of conversions filtered to location **pharmacy** only; form location locked; cancel only pharmacy docs (no new table)
+- Phar Adjustments — `/phar-adjustments` clone of adjustments; list/create/cancel **pharmacy only**; form location locked (no new table)
 - GST Types management
 - Suppliers management (with audit trail)
 - Products management (editable product codes with optional next-code prefill, required UOM + GST type FKs, optional category, stock/cost tracking)
