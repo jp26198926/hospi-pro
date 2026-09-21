@@ -17,6 +17,8 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Stock Level (read-only current qty per product and location; filled by future transaction modules)
 - Stock Movement (read-only inventory trail: trans type, qty +/-, reference, remarks)
 - Report Inventory — `/report-inventory` read-only balance report from `stock_movements` (Beg/In/Out/End by product×location); filters + PDF/Excel; no DB migration
+- Report Low Stock — `/report-low-stock` locations where on-hand ≤ product min stock; Generate + PDF/Excel
+- Report Near Expiry — `/report-near-expiry` lots expiring within N days (default 30) + expired; Generate + PDF/Excel
 - FEFO inventory — lots in `inventory_batches`; receiving posts batch/expiry; releasing Complete auto-allocates earliest expiry (`lib/fefo.ts`); optional batch pick on release; `npm run db:truncate-inventory` resets stock history
 - Receivings — list `/receivings` (**Trans #** `RCV-#####` is **clickable** → detail; list defaults to **Draft**). **Detail `/receivings/[id]`**: master info + items table (Batch #, UOM, Qty/Cost/Total `0.0000`); status actions **Back | Edit | Mark as Completed | Cancel / Print / Restore** on one row; toggle cancelled items; Print via shared `printDocumentPdf`.
 - Releasings — list `/releasings` (**Trans #** `RLS-#####` **clickable** → detail; Draft default). **Detail `/releasings/[id]`**: from/to location + receiver + items (Series `RI-######`, UOM); **barcode scan auto-add** (`5*CODE`); same status actions + print layout as receivings (`RELEASING` / Released By).
