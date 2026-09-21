@@ -15,6 +15,8 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 - Payment Terms management (unique name + term days, default 0)
 - Trans Type management (unique name, transaction type lookup)
 - Stock Level (read-only current qty per product and location; filled by future transaction modules)
+- Phar Stock Levels — `/phar-stock-levels` clone of stock levels filtered to location **pharmacy** only (no new table)
+- Phar Stock Movements — `/phar-stock-movements` clone of stock movements filtered to **pharmacy** only (no new table)
 - Stock Movement (read-only inventory trail: trans type, qty +/-, reference, remarks)
 - Report Inventory — `/report-inventory` read-only balance report from `stock_movements` (Beg/In/Out/End by product×location); filters + PDF/Excel; no DB migration
 - Report Low Stock — `/report-low-stock` locations where on-hand ≤ product min stock; Generate + PDF/Excel

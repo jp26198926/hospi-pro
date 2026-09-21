@@ -115,6 +115,10 @@ Existing tables in `lib/db/schema.ts`: `departments`, `categories`, `locations`,
 
 **`report-low-stock` / `report-near-expiry`** (report-only): same Generate-first layout + `drawCompanyHeader` PDF/Excel as report-inventory. **Low stock** (`/report-low-stock`): `stock_levels.qty <= products.minStock` per location; default filter minStock > 0. **Near expiry** (`/report-near-expiry`): `inventory_batches` Active qty > 0 with dateExpiry ≤ today + **days** (default 30); includes **Expired**; Status filter All/Near/Expired. Pages ids 33–34; Admin View+Read.
 
+**`phar-stock-levels`**: clone of **stock-levels** at **`/phar-stock-levels`** (menu **Phar Stock Levels**, page id 36). No new table — `GET /api/phar-stock-levels` always filters `stock_levels` to Active location **`lower(name) = 'pharmacy'`**. Search: product + dates only. Same list export/pagination as stock-levels.
+
+**`phar-stock-movements`**: clone of **stock-movements** at **`/phar-stock-movements`** (menu **Phar Stock Movements**, page id 37). No new table — `GET /api/phar-stock-movements` always filters `stock_movements` to Active location **`lower(name) = 'pharmacy'`** (client locationId ignored). Search: trans type + dates + product/reference text. Same list export/pagination as stock-movements.
+
 **FEFO inventory (implemented)**: lots in **`inventory_batches`** (`productId`+`locationId`+`batchNo` unique, `dateExpiry`, `qty`). Receiving complete upserts lots from item `batchNo` (or `BATCH-{itemId}`) + `dateExpiry`. Releasing complete uses **`consumeFefo`** (`lib/fefo.ts`) — earliest expiry first, **null expiry last** — optional `releasing_items.batchId` pins a lot; else auto. Allocations in **`releasing_item_batches`** / **`transfer_item_batches`**. Transfers/adjustments/conversions lot-aware. `stock_movements.batchId`/`batchNo` tagged. Invariant: sum(batches) = `stock_levels.qty`. Scan remains product-only; Complete does FEFO. Reset data: `npm run db:truncate-inventory`. Study: `FEFO-STUDY.md`.
 
 **Soft delete only** — never hard delete. Uniqueness checks must exclude Deleted rows (`ne(status, "Deleted")`).
