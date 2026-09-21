@@ -91,6 +91,7 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 | `npm run db:studio` | Open Drizzle Studio (database GUI) |
 | `npm run db:seed-timezones` | Seed timezone table |
 | `npm run db:seed-currencies` | Seed currency table |
+| `npm run db:truncate-inventory` | Truncate stock docs/movements/lots/levels; reset `products.stock` to 0 (keeps masters) |
 
 ## Project Structure
 
@@ -117,6 +118,10 @@ app/
 │   ├── transfers/         # list + [id] detail
 │   ├── trans-types/
 │   ├── adjustments/       # list + view/cancel modals
+│   ├── conversions/       # list + view/cancel modals
+│   ├── payment-methods/
+│   ├── payment-terms/
+│   ├── report-inventory/  # FEFO balance report (Generate + PDF/Excel header)
 │   ├── uoms/
 │   └── users/
 ├── (auth)/               # Public auth pages
@@ -143,26 +148,50 @@ app/
 │   ├── timezones/
 │   ├── uoms/
 │   ├── upload/
-│   └── users/
+│   ├── users/
+│   ├── inventory-batches/   # open lots for FEFO pick
+│   ├── report-inventory/    # aggregate GET only
+│   ├── releasings/preview-fefo/
+│   ├── adjustments/
+│   ├── conversions/
+│   ├── receivings/
+│   ├── releasings/
+│   ├── transfers/
+│   ├── stock-levels/
+│   └── stock-movements/
 ├── layout.tsx            # Root layout
 └── favicon.ico/          # Dynamic favicon route
 components/
+├── adjustments/
 ├── auth/                 # Login form, change password modal, profile modal
 ├── categories/
+├── conversions/
 ├── departments/
 ├── gst-types/
 ├── layout/               # Sidebar, navbar, breadcrumb
 ├── locations/
 ├── pages/
+├── payment-methods/
+├── payment-terms/
 ├── permissions/
 ├── products/
+├── receivings/           # list + [id] detail
+├── receiving-items/
+├── releasings/
+├── releasing-items/
+├── report-inventory/     # FEFO-era balance report UI
 ├── role-permissions/
 ├── roles/
 ├── settings-application/
 ├── settings-cloudinary/
 ├── settings-mail/
 ├── settings-sms/
+├── stock-levels/
+├── stock-movements/
 ├── suppliers/
+├── transfers/
+├── transfer-items/
+├── trans-types/
 ├── ui/                   # Reusable UI components (button, input, dialog, table, etc.)
 ├── uoms/
 └── users/
@@ -177,8 +206,13 @@ lib/
 │   └── schema.ts         # All table schemas
 ├── permissions.ts        # Cached RBAC permission lookups (30s TTL)
 ├── print/
-│   └── document-print.ts # Shared branded PDF layout (receivings/releasings/future)
-├── receiving-stock.ts    # Receivings complete/cancel stock posting (db.transaction)
+│   └── document-print.ts # Shared branded PDF + drawCompanyHeader (list/report headers)
+├── fefo.ts               # Lot helpers: upsertInventoryBatch, consumeFefo, previewFefo
+├── receiving-stock.ts    # Receivings complete/cancel — lots + stock_levels + products.stock
+├── releasing-stock.ts    # Releasings complete/cancel — FEFO allocate/reverse
+├── transfer-stock.ts     # Transfers complete/cancel — FEFO from→to lots
+├── adjustment-stock.ts   # Adjustments save/cancel — lot in/out
+├── conversion-stock.ts   # Conversions save/cancel — lot consume/create
 ├── receivings.ts         # Trans #/batch helpers, re-export formatUserDisplay
 ├── settings.ts           # Cached app settings + getAppTimezone(); address/phone for print headers
 ├── utils.ts              # cn() utility for classnames
@@ -202,7 +236,7 @@ lib/
     └── user.ts
 proxy.ts                  # Next.js 16 middleware (auth gate)
 drizzle/                  # Database migration files
-scripts/                  # Seed scripts (seed-timezones, seed-currencies)
+scripts/                  # Seed scripts + truncate-inventory.ts (npm run db:truncate-inventory)
 ```
 
 ## Architecture
