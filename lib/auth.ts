@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { createHash, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
 import { users, refreshTokens } from "@/lib/db/schema";
 import { eq, and, gt } from "drizzle-orm";
@@ -14,6 +15,22 @@ export interface JwtPayload {
   firstname: string;
   lastname: string;
   roleId: number | null;
+  bypass?: boolean;
+}
+
+// Emergency bypass credential from env (disabled when either var is empty)
+export function getBypassCreds(): { email: string; password: string } | null {
+  const email = process.env.BYPASS_EMAIL;
+  const password = process.env.BYPASS_PASSWORD;
+  if (!email || !password) return null;
+  return { email, password };
+}
+
+// Constant-time string comparison
+export function safeEqual(a: string, b: string): boolean {
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
 }
 
 // Generate access token
@@ -21,9 +38,13 @@ export function generateAccessToken(payload: JwtPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
 }
 
-// Generate refresh token
-export function generateRefreshToken(): string {
-  return jwt.sign({ type: "refresh" }, JWT_SECRET, { expiresIn: `${REFRESH_TOKEN_EXPIRY_DAYS}d` });
+// Generate refresh token (bypass refresh tokens are never persisted to the DB)
+export function generateRefreshToken(bypass = false): string {
+  return jwt.sign(
+    bypass ? { type: "refresh", bypass: true } : { type: "refresh" },
+    JWT_SECRET,
+    { expiresIn: `${REFRESH_TOKEN_EXPIRY_DAYS}d` }
+  );
 }
 
 // Verify access token
@@ -58,10 +79,15 @@ export async function saveRefreshToken(userId: number, token: string): Promise<v
 }
 
 // Validate refresh token
-export async function validateRefreshToken(token: string): Promise<number | null> {
+export async function validateRefreshToken(
+  token: string
+): Promise<{ userId: number; bypass: boolean } | null> {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { type: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { type: string; bypass?: boolean };
     if (decoded.type !== "refresh") return null;
+
+    // Bypass refresh tokens carry no DB row (no user id to reference)
+    if (decoded.bypass) return { userId: 0, bypass: true };
 
     const [record] = await db
       .select()
@@ -75,7 +101,7 @@ export async function validateRefreshToken(token: string): Promise<number | null
 
     if (!record) return null;
 
-    return record.userId;
+    return { userId: record.userId, bypass: false };
   } catch {
     return null;
   }

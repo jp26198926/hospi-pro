@@ -11,7 +11,7 @@ import { eq, and } from "drizzle-orm";
 import { getTransTypeIdByName, receivingRef } from "@/lib/receivings";
 import { consumeFefo, defaultBatchNo, fmtQty, toNum, upsertInventoryBatch } from "@/lib/fefo";
 
-export async function completeReceiving(receivingId: number, userId: number) {
+export async function completeReceiving(receivingId: number, userId: number | null) {
   const receivingTypeId = await getTransTypeIdByName("Receiving");
   return db.transaction(async (tx) => {
     const [master] = await tx
@@ -146,7 +146,7 @@ export async function completeReceiving(receivingId: number, userId: number) {
 
 export async function cancelCompletedReceiving(
   receivingId: number,
-  userId: number,
+  userId: number | null,
   deletedReason: string | null
 ) {
   const cancelTypeId = await getTransTypeIdByName("Receiving Cancel");

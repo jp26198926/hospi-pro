@@ -3,7 +3,7 @@ import { Shield, Users, Settings, BarChart3 } from "lucide-react";
 import { requirePageRead } from "@/lib/api-auth";
 
 export default async function Home() {
-  await requirePageRead("/dashboard");
+  await requirePageRead("/");
   return (
     <div className="space-y-4">
       {/* Page Header */}

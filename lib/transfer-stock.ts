@@ -24,7 +24,7 @@ async function upsertStockLevel(
   productId: number,
   locationId: number,
   delta: number,
-  userId: number
+  userId: number | null
 ) {
   const [level] = await tx
     .select()
@@ -56,7 +56,7 @@ async function upsertStockLevel(
   }
 }
 
-export async function completeTransfer(transferId: number, userId: number) {
+export async function completeTransfer(transferId: number, userId: number | null) {
   const transferTypeId = await getTransTypeIdByName("Transfer");
   return db.transaction(async (tx) => {
     const [master] = await tx.select().from(transfers).where(eq(transfers.id, transferId));
@@ -186,7 +186,7 @@ export async function completeTransfer(transferId: number, userId: number) {
 
 export async function cancelCompletedTransfer(
   transferId: number,
-  userId: number,
+  userId: number | null,
   deletedReason: string | null
 ) {
   const cancelTypeId = await getTransTypeIdByName("Transfer Cancel");

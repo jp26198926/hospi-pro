@@ -12,7 +12,7 @@ import { eq, and } from "drizzle-orm";
 import { getTransTypeIdByName, releasingRef } from "@/lib/releasings";
 import { consumeFefo, fmtQty, toNum } from "@/lib/fefo";
 
-export async function completeReleasing(releasingId: number, userId: number) {
+export async function completeReleasing(releasingId: number, userId: number | null) {
   const releasingTypeId = await getTransTypeIdByName("Releasing");
   return db.transaction(async (tx) => {
     const [master] = await tx
@@ -130,7 +130,7 @@ export async function completeReleasing(releasingId: number, userId: number) {
 
 export async function cancelCompletedReleasing(
   releasingId: number,
-  userId: number,
+  userId: number | null,
   deletedReason: string | null
 ) {
   const cancelTypeId = await getTransTypeIdByName("Releasing Cancel");

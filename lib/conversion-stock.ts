@@ -30,7 +30,7 @@ async function upsertStockLevel(
   productId: number,
   locationId: number,
   qty: number,
-  userId: number
+  userId: number | null
 ) {
   const [level] = await tx
     .select()
@@ -65,7 +65,7 @@ export async function createConversion(
     newQty: number;
     remarks: string | null;
   },
-  userId: number
+  userId: number | null
 ) {
   if (input.fromProductId === input.toProductId) {
     throw new Error("From product and To product must be different");
@@ -211,7 +211,7 @@ export async function createConversion(
 
 export async function cancelConversion(
   conversionId: number,
-  userId: number,
+  userId: number | null,
   deletedReason: string | null
 ) {
   const cancelTypeId = await getTransTypeIdByName("Conversion Cancel");

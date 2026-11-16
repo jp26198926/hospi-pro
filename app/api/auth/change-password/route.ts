@@ -19,6 +19,10 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Invalid or expired token" }, { status: 401 });
     }
 
+    if (payload.bypass) {
+      return Response.json({ error: "Not available for bypass user" }, { status: 400 });
+    }
+
     const body = await request.json();
     const parsed = changePasswordSchema.safeParse(body);
 
