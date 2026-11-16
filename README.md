@@ -80,10 +80,14 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 5. Seed reference and RBAC data (**required before using the app**):
    ```bash
    npm run db:seed-rbac
+   npm run db:seed-trans-types
    npm run db:seed-timezones
    npm run db:seed-currencies
    ```
-   `db:seed-rbac` seeds the `pages`, `permissions`, `roles`, and `role_permissions` tables (full sidebar menu + an `Admin` role with all permissions). All seeds are idempotent — safe to re-run.
+   - `db:seed-rbac` seeds the `pages`, `permissions`, `roles`, and `role_permissions` tables (full sidebar menu + an `Admin` role with all permissions).
+   - `db:seed-trans-types` seeds the `trans_types` rows the stock engine looks up by name (Receiving/Releasing/Transfer/Adjustment/Conversion + their Cancel counterparts) — completing or cancelling stock documents fails without them.
+
+   All seeds are idempotent — safe to re-run.
 6. Start the dev server:
    ```bash
    npm run dev
@@ -103,6 +107,7 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 | `npm run db:migrate` | Apply pending migration files to database |
 | `npm run db:studio` | Open Drizzle Studio (database GUI) |
 | `npm run db:seed-rbac` | Seed RBAC tables (pages, permissions, roles, role_permissions) — required before first use |
+| `npm run db:seed-trans-types` | Seed trans types required by stock posting (Receiving/Releasing/Transfer/Adjustment/Conversion + Cancels) |
 | `npm run db:seed-timezones` | Seed timezone table |
 | `npm run db:seed-currencies` | Seed currency table |
 | `npm run db:seed-phar-conversions-page` | Seed the Phar Conversions menu page + grants |
