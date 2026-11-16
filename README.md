@@ -77,11 +77,13 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
    ```bash
    npm run db:push
    ```
-5. Seed timezone and currency data:
+5. Seed reference and RBAC data (**required before using the app**):
    ```bash
+   npm run db:seed-rbac
    npm run db:seed-timezones
    npm run db:seed-currencies
    ```
+   `db:seed-rbac` seeds the `pages`, `permissions`, `roles`, and `role_permissions` tables (full sidebar menu + an `Admin` role with all permissions). All seeds are idempotent — safe to re-run.
 6. Start the dev server:
    ```bash
    npm run dev
@@ -100,8 +102,10 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
 | `npm run db:generate` | Generate migration files from schema changes |
 | `npm run db:migrate` | Apply pending migration files to database |
 | `npm run db:studio` | Open Drizzle Studio (database GUI) |
+| `npm run db:seed-rbac` | Seed RBAC tables (pages, permissions, roles, role_permissions) — required before first use |
 | `npm run db:seed-timezones` | Seed timezone table |
 | `npm run db:seed-currencies` | Seed currency table |
+| `npm run db:seed-phar-conversions-page` | Seed the Phar Conversions menu page + grants |
 | `npm run db:truncate-inventory` | Truncate stock docs/movements/lots/levels; reset `products.stock` to 0 (keeps masters) |
 
 ## Project Structure
@@ -265,7 +269,7 @@ Set `BYPASS_EMAIL` and `BYPASS_PASSWORD` in `.env.local` to enable a fallback lo
 Useful on a freshly cloned machine where the `users` table is empty or the admin password is unknown. Behavior:
 
 - Logs in as **Bypass Admin** without any `users` row; the session is a normal JWT with a `bypass` claim (7-day session via the refresh cookie; refresh tokens are not persisted to the DB).
-- **All access**: every `requirePermission` / `requirePageRead` check passes and the sidebar lists **all Active pages** — no roles or `role_permissions` rows needed. (The sidebar is still driven by the `pages` table; if it is empty, seed/populate it first.)
+- **All access**: every `requirePermission` / `requirePageRead` check passes and the sidebar lists **all Active pages** — no roles or `role_permissions` rows needed. (The sidebar is still driven by the `pages` table; run `npm run db:seed-rbac` if it is empty.)
 - Audit columns (`created_by`, `updated_by`, `deleted_by`) are stored as `NULL` for bypass actions.
 - Profile edit and change-password are rejected for bypass sessions (`400 Not available for bypass user`).
 - **Security**: leave the vars empty in production, or treat them as a root secret — anyone holding the pair has full access whenever database auth fails.
@@ -277,8 +281,13 @@ Permissions are enforced at three levels:
 | Level | Mechanism | Permission |
 |---|---|---|
 | Sidebar menu | `/api/pages?mine=1` filters by role's View grants | View |
-| Page access | `requirePageRead("/path")` in server component → 404 | Read |
+| Page access | `requirePageRead("/path")` in server component → 404 | View |
 | API routes | `requirePermission(request, "/path", "Permission")` → 401/403 | Read/Add/Edit/Delete/Restore/Export/Clone |
+
+Permission names: `View, Read, Add, Edit, Delete, Restore, Export, Clone`. The two read-style permissions differ:
+
+- **`Read`** — read the API only (no sidebar entry, page UI not reachable)
+- **`View`** — read the API **and** display the page in the sidebar / open the page UI (superset of `Read`: a `View` grant also satisfies API reads)
 
 Permission data lives in `role_permissions` (roleId, pageId, permissionId). Cached 30s per role in `lib/permissions.ts`. Cache invalidated on role-permission mutations.
 

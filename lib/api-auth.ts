@@ -125,7 +125,7 @@ export async function requirePageRead(pagePath: string): Promise<void> {
     notFound();
   }
 
-  const allowed = await hasPermission(user.roleId, pagePath, "Read");
+  const allowed = await hasPermission(user.roleId, pagePath, "View");
   if (!allowed) {
     notFound();
   }

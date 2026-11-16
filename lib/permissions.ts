@@ -54,7 +54,12 @@ export async function hasPermission(
 ): Promise<boolean> {
   if (!roleId) return false;
   const entry = await loadRolePermissions(roleId);
-  return entry.map[pagePath]?.includes(permissionName) ?? false;
+  const granted = entry.map[pagePath] ?? [];
+  // Read = API read only; View = API read + sidebar entry + page UI (superset of Read)
+  if (permissionName === "Read") {
+    return granted.includes("Read") || granted.includes("View");
+  }
+  return granted.includes(permissionName);
 }
 
 export async function getAllowedPageIds(roleId: number): Promise<number[]> {
