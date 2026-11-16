@@ -30,7 +30,7 @@ async function upsertStockLevel(
   productId: number,
   locationId: number,
   qty: number,
-  userId: number
+  userId: number | null
 ) {
   const [level] = await tx
     .select()
@@ -61,7 +61,7 @@ export async function createAdjustment(
     qtyAdj: number;
     remarks: string | null;
   },
-  userId: number
+  userId: number | null
 ) {
   const transTypeId = await getTransTypeIdByName("Adjustment");
   return db.transaction(async (tx) => {
@@ -170,7 +170,7 @@ export async function createAdjustment(
 
 export async function cancelAdjustment(
   adjustmentId: number,
-  userId: number,
+  userId: number | null,
   deletedReason: string | null
 ) {
   const cancelTypeId = await getTransTypeIdByName("Adjustment Cancel");

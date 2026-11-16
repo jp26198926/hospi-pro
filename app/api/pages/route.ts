@@ -12,14 +12,14 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
 
-    // Sidebar mode: return only pages the caller's role can View
+    // Sidebar mode: return only pages the caller's role can View (bypass sees all)
     if (searchParams.get("mine") === "1") {
       const auth = await requireAuth(request);
       if (auth instanceof Response) return auth;
-      if (!auth.roleId) return Response.json({ data: [], total: 0, page: 1, limit: 0 });
 
-      const allowedIds = await getAllowedPageIds(auth.roleId);
-      if (allowedIds.length === 0) return Response.json({ data: [], total: 0, page: 1, limit: 0 });
+      const allowedIds = auth.isBypass ? null : await getAllowedPageIds(auth.roleId!);
+      if (allowedIds && allowedIds.length === 0)
+        return Response.json({ data: [], total: 0, page: 1, limit: 0 });
 
       const data = await db
         .select({
@@ -32,7 +32,11 @@ export async function GET(request: NextRequest) {
           status: pages.status,
         })
         .from(pages)
-        .where(and(eq(pages.status, "Active"), inArray(pages.id, allowedIds)))
+        .where(
+          allowedIds
+            ? and(eq(pages.status, "Active"), inArray(pages.id, allowedIds))
+            : eq(pages.status, "Active")
+        )
         .orderBy(asc(pages.order));
 
       return Response.json({ data, total: data.length, page: 1, limit: data.length });

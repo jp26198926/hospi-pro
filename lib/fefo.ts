@@ -35,7 +35,7 @@ export async function upsertInventoryBatch(
     unitCost?: number;
     sourceType?: string;
     sourceItemId?: number | null;
-    userId: number;
+    userId: number | null;
   }
 ): Promise<{ id: number; batchNo: string; dateExpiry: Date | null; qty: number }> {
   const { productId, locationId, batchNo, dateExpiry, qtyDelta } = input;

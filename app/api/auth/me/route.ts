@@ -20,6 +20,22 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "Invalid or expired token" }, { status: 401 });
     }
 
+    if (payload.bypass) {
+      return Response.json({
+        data: {
+          id: 0,
+          email: payload.email,
+          firstname: "Bypass",
+          lastname: "Admin",
+          departmentId: null,
+          departmentName: null,
+          roleId: null,
+          roleName: "Bypass",
+          status: "Active",
+        },
+      });
+    }
+
     const [user] = await db
       .select({
         id: users.id,
@@ -60,6 +76,10 @@ export async function PUT(request: NextRequest) {
     const payload = verifyAccessToken(token);
     if (!payload) {
       return Response.json({ error: "Invalid or expired token" }, { status: 401 });
+    }
+
+    if (payload.bypass) {
+      return Response.json({ error: "Not available for bypass user" }, { status: 400 });
     }
 
     const body = await request.json();

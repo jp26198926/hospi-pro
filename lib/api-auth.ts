@@ -1,37 +1,49 @@
 import { NextRequest } from "next/server";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { verifyAccessToken } from "@/lib/auth";
+import { verifyAccessToken, getBypassCreds } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export interface AuthUser {
-  userId: number;
+  userId: number | null;
   roleId: number | null;
   email: string;
+  isBypass?: boolean;
+}
+
+function bypassUser(): AuthUser {
+  return {
+    userId: null,
+    roleId: null,
+    email: getBypassCreds()?.email ?? "",
+    isBypass: true,
+  };
 }
 
 async function resolveRoleId(
   token: string | null,
   refreshToken: string | null
-): Promise<{ userId: number; roleId: number | null; email: string } | null> {
+): Promise<AuthUser | null> {
   if (token) {
     const payload = verifyAccessToken(token);
     if (payload) {
+      if (payload.bypass) return bypassUser();
       return { userId: payload.userId, roleId: payload.roleId, email: payload.email };
     }
   }
 
   if (refreshToken) {
     const { validateRefreshToken } = await import("@/lib/auth");
-    const userId = await validateRefreshToken(refreshToken);
-    if (userId) {
+    const result = await validateRefreshToken(refreshToken);
+    if (result) {
+      if (result.bypass) return bypassUser();
       const [user] = await db
         .select({ id: users.id, roleId: users.roleId, email: users.email })
         .from(users)
-        .where(eq(users.id, userId));
+        .where(eq(users.id, result.userId));
       if (user) {
         return { userId: user.id, roleId: user.roleId, email: user.email };
       }
@@ -62,6 +74,9 @@ export async function requirePermission(
 
   if (!user) {
     return Response.json({ error: "Authentication required" }, { status: 401 });
+  }
+  if (user.isBypass) {
+    return user;
   }
   if (!user.roleId) {
     return Response.json({ error: "No role assigned" }, { status: 403 });
@@ -100,7 +115,13 @@ export async function requirePageRead(pagePath: string): Promise<void> {
   const token = bearer || cookieToken;
   const user = await resolveRoleId(token, refreshToken);
 
-  if (!user || !user.roleId) {
+  if (!user) {
+    notFound();
+  }
+  if (user.isBypass) {
+    return;
+  }
+  if (!user.roleId) {
     notFound();
   }
 

@@ -68,6 +68,11 @@ Role-Based Access Control system built with Next.js 16, Drizzle ORM, and Postgre
    ```bash
    cp .env.example .env.local
    ```
+   | Variable | Required | Description |
+   |---|---|---|
+   | `DATABASE_URL` | yes | PostgreSQL connection string |
+   | `JWT_SECRET` | no | JWT signing secret (dev falls back to a hardcoded key) |
+   | `BYPASS_EMAIL` / `BYPASS_PASSWORD` | no | Emergency bypass login credential (see [Authentication](#authentication)); leave empty to disable |
 4. Push the schema to your database:
    ```bash
    npm run db:push
@@ -252,6 +257,18 @@ scripts/                  # Seed scripts + truncate-inventory.ts (npm run db:tru
 - **Access tokens** (JWT, 15 min expiry) stored in `localStorage` + readable `accessToken` cookie (for SSR page guards)
 - **Refresh tokens** (JWT, 7 days) stored in httpOnly cookies
 - `proxy.ts` acts as middleware — checks auth on every request and redirects unauthenticated users to `/login`
+
+#### Bypass credential (emergency login)
+
+Set `BYPASS_EMAIL` and `BYPASS_PASSWORD` in `.env.local` to enable a fallback login with **all access**. Authentication order: **database first** (normal user lookup + password check) — only if that fails do the submitted credentials get compared against the env pair.
+
+Useful on a freshly cloned machine where the `users` table is empty or the admin password is unknown. Behavior:
+
+- Logs in as **Bypass Admin** without any `users` row; the session is a normal JWT with a `bypass` claim (7-day session via the refresh cookie; refresh tokens are not persisted to the DB).
+- **All access**: every `requirePermission` / `requirePageRead` check passes and the sidebar lists **all Active pages** — no roles or `role_permissions` rows needed. (The sidebar is still driven by the `pages` table; if it is empty, seed/populate it first.)
+- Audit columns (`created_by`, `updated_by`, `deleted_by`) are stored as `NULL` for bypass actions.
+- Profile edit and change-password are rejected for bypass sessions (`400 Not available for bypass user`).
+- **Security**: leave the vars empty in production, or treat them as a root secret — anyone holding the pair has full access whenever database auth fails.
 
 ### RBAC Enforcement
 
